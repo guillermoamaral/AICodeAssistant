@@ -101,10 +101,25 @@ AICodeAssistant >> explainCode: aString [
 ]
 
 { #category : 'services' }
+AICodeAssistant >> explainMethod: aCompiledMethod [
+
+	self useMethodContext: aCompiledMethod.
+	^ self sendPrompt:
+		  'Explain the given method'
+]
+
+{ #category : 'services' }
 AICodeAssistant >> improveCode: aString [
 
 	self useCodeContext: aString.
 	^ self sendPrompt: 'Improve the given code.'
+]
+
+{ #category : 'services' }
+AICodeAssistant >> improveMethod: aCompiledMethod [
+	
+	self useMethodContext: aCompiledMethod.
+	^ self sendPrompt: 'Improve the given method'
 ]
 
 { #category : 'initialization' }
@@ -213,7 +228,11 @@ AICodeAssistant >> writeTestForCode: aString [
 
 	self useCodeContext: aString.
 	^ self sendPrompt:
-		  'Write a unit test for the given code. Just give me the test method body. Do use testX for test selector.' 
+		  'Write a unit test for the given code. Do use testX for test selector.
+Your answer should be in correct Smalltalk in the following format:
+<bug>if you think there iss a problem, describe it here</bug>
+<thinking>your rational and explanation here, be brief</thinking>
+<code>pure Smalltalk code for the test case</code>'
 ]
 
 { #category : 'services' }
@@ -221,5 +240,22 @@ AICodeAssistant >> writeTestForMethod: aCompiledMethod [
 
 	self useMethodContext: aCompiledMethod.
 	^ self sendPrompt:
-		  'Write a unit test for the given code. Just give me the test method body. Do use testX for test selector.'
+		  'Write a unit test for the given method. Do use testX for test selector.
+Your answer should be in correct Smalltalk in the following format:
+<bug>if you think there is a problem, describe it here</bug>
+<thinking>your rational and explanation here, be brief</thinking>
+<code>pure Smalltalk code for the test case</code>'
+]
+
+{ #category : 'services' }
+AICodeAssistant >> writeTestsForMethod: aCompiledMethod [
+
+	self useMethodContext: aCompiledMethod.
+	^ self sendPrompt:
+		  'Write as many tests as you can for the given method. Do use testX for test selectors.
+It is a good idea to generate one test cases for simple use cases, border conditions, different argument classes, etc.
+Your answer should be in correct Smalltalk in the following format:
+<bug>if you think there is a problem, describe it here</bug>
+<thinking>your rational and explanation here, be brief</thinking>
+<code>pure Smalltalk code for the test case</code> and enclose each particular test between <test> and </test>'
 ]
