@@ -154,6 +154,12 @@ AICodeAssistant >> interface [
 ]
 
 { #category : 'accessing' }
+AICodeAssistant >> lastMessage [
+
+	^ messages last
+]
+
+{ #category : 'accessing' }
 AICodeAssistant >> messages [
 	^messages
 ]
