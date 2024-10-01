@@ -14,7 +14,7 @@ OpenAIInterfaceTest >> setUp [
 
 	super setUp.
 	interface := OpenAIInterface new.
-	interface key: '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'
+	interface key: '<your OpenAI key>'
 ]
 
 { #category : 'tests' }
