@@ -230,6 +230,50 @@ AICodeAssistant >> useMethodContext: aCompiledMethod [
 ]
 
 { #category : 'services' }
+AICodeAssistant >> useTestsContext: aTestSuite [
+
+	promptContext := String streamContents: [ :strm |
+		                 strm
+			                 nextPutAll:
+				                 'Consider the following tests in the form: <test>test code here</test>.';
+			                 cr.
+		                 aTestSuite tests
+			                 do: [ :test |
+				                 strm
+					                 nextPutAll: '<test>';
+					                 nextPutAll:
+						                 (test class >> test selector) sourceCode;
+					                 nextPutAll: '</test>' ]
+			                 separatedBy: [ strm cr ] ]
+]
+
+{ #category : 'services' }
+AICodeAssistant >> writeCodeFromTests: aTestSuite [
+
+	| answer |
+	self useTestsContext: aTestSuite.
+	answer := self sendPrompt:
+		          'Provide Smalltalk code that passes given tests.
+You answer should be in correct Smalltalk in the following format:
+<issue>if you think there''''s a problem, describe it here</issue>
+<thinking>your rational and explanation here, be brief</thinking>
+<code>
+	<class>
+		<definition>Smalltalk class definition here</definition>
+		<method>Smalltalk method code here</method>
+		<method>Smalltalk method code here</method>
+		<method>Smalltalk method code here</method>
+		...
+	</class>
+</code>
+repeating <class> for each class you define, and <method> for every method you define in every class'''.
+	answer tags: { 'bug'. 'thinking'. 'test' }.
+	(answer partTaggedWith: 'code') ifNotNil: [ :code | ^ code ].
+	(answer partTaggedWith: 'issue') ifNotNil: [ :issue | ^ issue ].
+	^ (answer partTaggedWith: 'thinking') ifNil: [ answer content ]
+]
+
+{ #category : 'services' }
 AICodeAssistant >> writeTestForCode: aString [
 
 	self useCodeContext: aString.

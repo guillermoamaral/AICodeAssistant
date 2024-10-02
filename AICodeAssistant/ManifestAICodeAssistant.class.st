@@ -13,5 +13,5 @@ Class {
 ManifestAICodeAssistant class >> ruleCollectionProtocolRuleV1FalsePositive [
 
 	<ignoreForCoverage>
-	^ #(#(#(#RGMethodDefinition #(#AITestGenerationEffectiveness #generateTestsFor: #false)) #'2024-10-02T00:07:32.056-03:00') )
+	^ #(#(#(#RGMethodDefinition #(#AITestGenerationBenchmark #generateTestsFor: #false)) #'2024-10-02T00:07:32.056-03:00') )
 ]

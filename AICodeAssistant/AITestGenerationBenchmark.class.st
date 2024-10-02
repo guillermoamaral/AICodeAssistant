@@ -1,5 +1,5 @@
 Class {
-	#name : 'AITestGenerationEffectiveness',
+	#name : 'AITestGenerationBenchmark',
 	#superclass : 'AICodeAssistantBenchmark',
 	#instVars : [
 		'numIterations',
@@ -12,7 +12,7 @@ Class {
 }
 
 { #category : 'private' }
-AITestGenerationEffectiveness >> canCompile: aString in: aClass [
+AITestGenerationBenchmark >> canCompile: aString in: aClass [
 	"
 	self new canCompile: 'm ^' in: Class
 	"
@@ -29,7 +29,7 @@ AITestGenerationEffectiveness >> canCompile: aString in: aClass [
 ]
 
 { #category : 'private' }
-AITestGenerationEffectiveness >> generateTestsFor: aCompiledMethod [
+AITestGenerationBenchmark >> generateTestsFor: aCompiledMethod [
 
 	| tests result attempt |
 	tests := assistant
@@ -46,7 +46,7 @@ AITestGenerationEffectiveness >> generateTestsFor: aCompiledMethod [
 ]
 
 { #category : 'initialization' }
-AITestGenerationEffectiveness >> initialize [
+AITestGenerationBenchmark >> initialize [
 	super initialize.
 	numIterations := 5.
 	maxAttempts := 2.
@@ -54,19 +54,19 @@ AITestGenerationEffectiveness >> initialize [
 ]
 
 { #category : 'parameters' }
-AITestGenerationEffectiveness >> maxAttempts: aNumber [
+AITestGenerationBenchmark >> maxAttempts: aNumber [
 
 	maxAttempts := aNumber
 ]
 
 { #category : 'parameters' }
-AITestGenerationEffectiveness >> numIterations: aNumber [
+AITestGenerationBenchmark >> numIterations: aNumber [
 
 	numIterations := aNumber
 ]
 
 { #category : 'running' }
-AITestGenerationEffectiveness >> run [
+AITestGenerationBenchmark >> run [
 	"
 	self new run
 	"
@@ -75,22 +75,22 @@ AITestGenerationEffectiveness >> run [
 ]
 
 { #category : 'parameters' }
-AITestGenerationEffectiveness >> systemPrompt [
+AITestGenerationBenchmark >> systemPrompt [
 	^'You are helping a user create test cases for a Smalltalk system.
 Your task is to generate a test cases for the provided code.'
 ]
 
 { #category : 'parameters' }
-AITestGenerationEffectiveness >> targetMethods: aCollection [
+AITestGenerationBenchmark >> targetMethods: aCollection [
 	
 		targetMethods := aCollection
 
 ]
 
 { #category : 'private' }
-AITestGenerationEffectiveness >> tryTestCode: aString [
+AITestGenerationBenchmark >> tryTestCode: aString [
 
-	| result selector suite test testResult |
+	| result selector suite test testResult error |
 	result := AITestGenerationResult new
 		          conversation: assistant messages copy;
 		          testCode: aString.
@@ -101,15 +101,19 @@ AITestGenerationEffectiveness >> tryTestCode: aString [
 	test := TestCase selector: selector.
 	suite addTest: test.
 	testResult := suite run.
-	testResult hasErrors ifTrue: [ ^ result halt beError: nil ].
+	testResult hasErrors ifTrue: [
+		[ test runCase ]
+			on: Error
+			do: [ :e | error := e ].
+		^ result beError: error ].
 	testResult hasFailures
 		ifTrue: [ result beFailed ]
-		ifFalse: [ result bePassed ]. 
+		ifFalse: [ result bePassed ].
 	^ result
 ]
 
 { #category : 'private' }
-AITestGenerationEffectiveness >> tryToOvercomeError: anAITestAssistantResult [
+AITestGenerationBenchmark >> tryToOvercomeError: anAITestAssistantResult [
 
 	| error prompt answer code |
 	error := anAITestAssistantResult error.
