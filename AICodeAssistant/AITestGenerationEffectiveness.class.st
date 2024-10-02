@@ -29,17 +29,20 @@ AITestGenerationEffectiveness >> canCompile: aString in: aClass [
 ]
 
 { #category : 'private' }
-AITestGenerationEffectiveness >> generateTestFor: aCompiledMethod [
+AITestGenerationEffectiveness >> generateTestsFor: aCompiledMethod [
 
-	| result attempt |
-	assistant clearHistory; writeTestForMethod: aCompiledMethod.
-	result := self tryToUseGeneratedTest.
-	attempt := 1.
-	[ result hasError and: [ attempt < maxAttempts ] ] whileTrue: [
-		result := self tryToOvercomeError: result.
-		attempt := attempt + 1 ].
-	(results at: aCompiledMethod ifAbsentPut: [ OrderedCollection new ])
-		add: result
+	| result attempt answer |
+	answer := assistant
+		          clearHistory;
+		          writeTestForMethod: aCompiledMethod.
+	(answer partsTaggedWith: 'test') do: [ :code |
+		result := self tryTestCode: code trim.
+		result testedMethod: aCompiledMethod.
+		attempt := 1.
+		[ result hasError and: [ attempt < maxAttempts ] ] whileTrue: [
+			result := self tryToOvercomeError: result.
+			attempt := attempt + 1 ].
+		results add: result ]
 ]
 
 { #category : 'initialization' }
@@ -64,9 +67,11 @@ AITestGenerationEffectiveness >> numIterations: aNumber [
 
 { #category : 'running' }
 AITestGenerationEffectiveness >> run [
-
+	"
+	self new run
+	"
 	numIterations timesRepeat: [
-	targetMethods do: [ :method | self generateTestFor: method ] ]
+		targetMethods do: [ :method | self generateTestsFor: method ] ]
 ]
 
 { #category : 'parameters' }
@@ -83,35 +88,60 @@ AITestGenerationEffectiveness >> targetMethods: aCollection [
 ]
 
 { #category : 'private' }
-AITestGenerationEffectiveness >> testClassFor: aCompiledMethod [
+AITestGenerationEffectiveness >> tryTestCode: aString [
 
-	| class classname |
-	class := aCompiledMethod methodClass.
-	[ class == Object ] whileFalse: [
-		| tc |
-		classname := class name , 'Test'.
-		tc := Smalltalk classNamed: classname.
-		tc ifNotNil: [ ^ tc ].
-		class := class superclass ].
-	^ TestCase
+	| result selector suite test testResult |
+	result := AITestGenerationResult new
+		          conversation: assistant messages copy;
+		          testCode: aString.
+	(self canCompile: aString in: TestCase) ifFalse: [
+		^ result beInvalid ].
+	selector := TestCase compile: 'test_AiGenerated_' , aString.
+	suite := TestSuite named: selector.
+	test := TestCase selector: selector.
+	suite addTest: test.
+	testResult := suite run.
+	testResult hasErrors ifTrue: [ ^ result halt beError: nil ].
+	testResult hasFailures
+		ifTrue: [ result beFailed ]
+		ifFalse: [ result bePassed ]. 
+	^ result
 ]
 
 { #category : 'private' }
-AITestGenerationEffectiveness >> tryToUseGeneratedTestOn: aClass [
-	| result parts code class method suite test |
-	result := AITestGenerationResult new conversation: assistant messages copy.
-	parts := assistant lastMessage partsTaggedWith: 'code'.
-	code := parts notEmpty ifTrue: [ parts anyOne ] ifFalse: [^result beInvalid ].
-	class := self testClassFor: aClass.
-	(self canCompile: code in: class) ifFalse: [^result beInvalid].
-	method := class compile: 'test_AiGenerated_' , code.
-	result test: method.
-	suite := TestSuite named: method selector.
-	test := class selector: method selector.
-	suite addTest: test.
-	result := suite run.
-	result hasErrors
-		ifTrue: [^result beError: nil].
-	result hasFailures ifTrue: [result beFailed] ifFalse: [result bePassed].
-	^result
+AITestGenerationEffectiveness >> tryToOvercomeError: anAITestAssistantResult [
+
+	| error prompt answer parts code |
+	error := anAITestAssistantResult error.
+	prompt := error class == MessageNotUnderstood
+		          ifTrue: [
+			          String streamContents: [ :strm |
+				          strm
+					          nextPutAll: 'This code you have provided ';
+					          nextPutAll: anAITestAssistantResult testCode;
+					          nextPutAll:
+						          ' resulted in a MessageNotUnderstood exception since ';
+					          nextPutAll: error message selector;
+					          nextPutAll: ' is not understood by an instance of ';
+					          nextPutAll: error receiver class name;
+					          nextPutAll:
+						          '. Provide a better version based on the messages that object understands: '.
+				          error receiver class selectors
+					          do: [ :s | strm nextPutAll: s ]
+					          separatedBy: [ strm nextPut: $, ] ] ]
+		          ifFalse: [
+			          String streamContents: [ :strm |
+				          strm
+					          nextPutAll:
+						          'The code you have provided resulted in a the exception: ';
+					          nextPutAll: error description;
+					          nextPutAll: '. Provide a version that does not fail.' ] ].
+	answer := assistant
+		          clearPromptContext;
+		          sendPrompt:
+			          prompt
+			          , ' Enclose the code between <test> and </test> tags'.
+	parts := answer partsTaggedWith: 'test'.
+	code := parts notEmpty ifTrue: [ parts anyOne ]. 
+	^ self tryTestCode: code
 ]

@@ -246,11 +246,11 @@ AICodeAssistant >> writeTestForMethod: aCompiledMethod [
 
 	self useMethodContext: aCompiledMethod.
 	^ self sendPrompt:
-		  'Write a unit test for the given method. Do use testX for test selector.
+		  'Write a unit test, only one unit test, for the given method. Do use testX for test selector.
 Your answer should be in correct Smalltalk in the following format:
 <bug>if you think there is a problem, describe it here</bug>
 <thinking>your rational and explanation here, be brief</thinking>
-<code>pure Smalltalk code for the test case</code>'
+<test>pure Smalltalk code for the test case, without any ```marks</test>'
 ]
 
 { #category : 'services' }
@@ -263,5 +263,5 @@ It is a good idea to generate one test cases for simple use cases, border condit
 Your answer should be in correct Smalltalk in the following format:
 <bug>if you think there is a problem, describe it here</bug>
 <thinking>your rational and explanation here, be brief</thinking>
-<code>pure Smalltalk code for the test case</code> and enclose each particular test between <test> and </test>'
+Enclose each test between <test> and </test>, just pure Smalltalk code without any ``` marks.'
 ]

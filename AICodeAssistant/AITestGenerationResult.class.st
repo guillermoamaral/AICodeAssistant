@@ -2,8 +2,9 @@ Class {
 	#name : 'AITestGenerationResult',
 	#superclass : 'Object',
 	#instVars : [
+		'testedMethod',
 		'conversation',
-		'test',
+		'testCode',
 		'error',
 		'covered',
 		'status'
@@ -95,11 +96,7 @@ AITestGenerationResult >> initialize [
 { #category : 'printing' }
 AITestGenerationResult >> printOn: aStream [
 
-	aStream nextPutAll: status.
-	test ifNotNil: [
-		aStream
-			space;
-			nextPutAll: test selector ]
+	aStream nextPutAll: status
 ]
 
 { #category : 'accessing' }
@@ -109,15 +106,27 @@ AITestGenerationResult >> result [
 ]
 
 { #category : 'accessing' }
-AITestGenerationResult >> test [
+AITestGenerationResult >> testCode [
 
-	^ test
+	^ testCode
 ]
 
 { #category : 'accessing' }
-AITestGenerationResult >> test: aCompiledMethod [
+AITestGenerationResult >> testCode: aString [
 
-	test := aCompiledMethod
+	testCode := aString
+]
+
+{ #category : 'accessing' }
+AITestGenerationResult >> testedMethod [
+
+	^ testedMethod
+]
+
+{ #category : 'accessing' }
+AITestGenerationResult >> testedMethod: aCompiledMethod [
+
+	testedMethod := aCompiledMethod
 ]
 
 { #category : 'testing' }

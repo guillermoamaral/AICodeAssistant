@@ -10,6 +10,12 @@ Class {
 	#tag : 'Benchmarks'
 }
 
+{ #category : 'accessing' }
+AICodeAssistantBenchmark >> assistant [
+
+	^ assistant
+]
+
 { #category : 'intialization' }
 AICodeAssistantBenchmark >> initialize [
 
