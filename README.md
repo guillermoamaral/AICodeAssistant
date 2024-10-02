@@ -19,18 +19,19 @@ You can create a new AICodeAssistant and start talking to it like this:
 assistant := AICodeAssistant new.
 assistant interface key: "your service key".
 
-"Generate a test for a given method"
-assistant writeTestForMethod: Date >> #addDays:.
-
-"Generate several tests for a given method"
-assistant writeTestsForMethod: Date >> #addDays:.
-
 "Explain a method"
 assistant explainMethod: Date >> #addDays:.
 
+"Generate a tests"
+assistant beTestsGenerator.
+"One test"
+assistant writeTestForMethod: Date >> #addDays:.
+"Several tests covering different cases" 
+assistant writeTestsForMethod: Date >> #addDays:.
+
 "Generate code based on a given test suite"
-suite := RectangleTest buildSuiteFromLocalSelectors. 
-assistant writeCodeFromTests: suite.
+assistant beCodeFromTestsGenerator.
+assistant writeCodeFromTests: RectangleTest buildSuiteFromLocalSelectors.
 
 ```
 
