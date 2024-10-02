@@ -244,24 +244,34 @@ Your answer should be in correct Smalltalk in the following format:
 { #category : 'services' }
 AICodeAssistant >> writeTestForMethod: aCompiledMethod [
 
+	| answer |
 	self useMethodContext: aCompiledMethod.
-	^ self sendPrompt:
-		  'Write a unit test, only one unit test, for the given method. Do use testX for test selector.
+	answer := self sendPrompt:
+		          'Write a unit test, only one unit test, for the given method. Do use testX for test selector.
 Your answer should be in correct Smalltalk in the following format:
 <bug>if you think there is a problem, describe it here</bug>
 <thinking>your rational and explanation here, be brief</thinking>
-<test>pure Smalltalk code for the test case, without any ```marks</test>'
+<test>pure Smalltalk code for the test case, without any ```marks</test>'.
+	answer tags: { 'bug'. 'thinking'. 'test' }.
+	(answer partTaggedWith: 'test') ifNotNil: [ :test | ^ test ].
+	(answer partTaggedWith: 'bug') ifNotNil: [ :bug | ^ bug ].
+	^ (answer partTaggedWith: 'thinking') ifNil: [ answer content ]
 ]
 
 { #category : 'services' }
 AICodeAssistant >> writeTestsForMethod: aCompiledMethod [
 
+	| answer |
 	self useMethodContext: aCompiledMethod.
-	^ self sendPrompt:
+	answer := self sendPrompt:
 		  'Write as many tests as you can for the given method. Do use testX for test selectors.
 It is a good idea to generate one test cases for simple use cases, border conditions, different argument classes, etc.
 Your answer should be in correct Smalltalk in the following format:
 <bug>if you think there is a problem, describe it here</bug>
 <thinking>your rational and explanation here, be brief</thinking>
-Enclose each test between <test> and </test>, just pure Smalltalk code without any ``` marks.'
+Enclose each test between <test> and </test>, just pure Smalltalk code without any ``` marks.'.
+	answer tags: { 'bug'. 'thinking'. 'test' }.
+	(answer partsTaggedWith: 'test') ifNotNil: [ :tests | ^ tests ].
+	(answer partTaggedWith: 'bug') ifNotNil: [ :bug | ^ bug ].
+	^ (answer partTaggedWith: 'thinking') ifNil: [ answer content ]
 ]

@@ -31,11 +31,11 @@ AITestGenerationEffectiveness >> canCompile: aString in: aClass [
 { #category : 'private' }
 AITestGenerationEffectiveness >> generateTestsFor: aCompiledMethod [
 
-	| result attempt answer |
-	answer := assistant
-		          clearHistory;
-		          writeTestForMethod: aCompiledMethod.
-	(answer partsTaggedWith: 'test') do: [ :code |
+	| tests result attempt |
+	tests := assistant
+		         clearHistory;
+		         writeTestsForMethod: aCompiledMethod.
+	tests do: [ :code |
 		result := self tryTestCode: code trim.
 		result testedMethod: aCompiledMethod.
 		attempt := 1.
@@ -111,7 +111,7 @@ AITestGenerationEffectiveness >> tryTestCode: aString [
 { #category : 'private' }
 AITestGenerationEffectiveness >> tryToOvercomeError: anAITestAssistantResult [
 
-	| error prompt answer parts code |
+	| error prompt answer code |
 	error := anAITestAssistantResult error.
 	prompt := error class == MessageNotUnderstood
 		          ifTrue: [
@@ -141,7 +141,6 @@ AITestGenerationEffectiveness >> tryToOvercomeError: anAITestAssistantResult [
 		          sendPrompt:
 			          prompt
 			          , ' Enclose the code between <test> and </test> tags'.
-	parts := answer partsTaggedWith: 'test'.
-	code := parts notEmpty ifTrue: [ parts anyOne ]. 
+	code := (answer partTaggedWith: 'test') ifNil: [''].
 	^ self tryTestCode: code
 ]

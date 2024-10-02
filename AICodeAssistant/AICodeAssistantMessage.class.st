@@ -2,8 +2,9 @@ Class {
 	#name : 'AICodeAssistantMessage',
 	#superclass : 'Object',
 	#instVars : [
+		'role',
 		'content',
-		'role'
+		'tags'
 	],
 	#category : 'AICodeAssistant-Base',
 	#package : 'AICodeAssistant',
@@ -56,8 +57,18 @@ AICodeAssistantMessage >> content: aString [
 
 { #category : 'initialization' }
 AICodeAssistantMessage >> initialize [
+
 	super initialize.
-	role := 'user'
+	role := 'user'.
+	tags := OrderedCollection new
+]
+
+{ #category : 'services' }
+AICodeAssistantMessage >> partTaggedWith: tag [
+
+	| parts |
+	parts := self partsTaggedWith: tag.
+	^ parts notEmpty ifTrue: [ parts anyOne ]
 ]
 
 { #category : 'services' }
@@ -101,4 +112,27 @@ AICodeAssistantMessage >> role [
 AICodeAssistantMessage >> role: aString [
 
 	role := aString
+]
+
+{ #category : 'services' }
+AICodeAssistantMessage >> taggedContent [
+
+	| tagged parts |
+	tagged := Dictionary new.
+	tags do: [ :tag |
+		parts := self partsTaggedWith: tag.
+		tagged at: tag put: parts ].
+	^ tagged
+]
+
+{ #category : 'accessing' }
+AICodeAssistantMessage >> tags [
+
+	^ tags 
+]
+
+{ #category : 'accessing' }
+AICodeAssistantMessage >> tags: aCollection [
+
+	tags := aCollection
 ]
