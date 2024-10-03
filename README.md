@@ -15,9 +15,8 @@ Metacello new
 
 You can create a new AICodeAssistant and start talking to it like this:
 ```smalltalk
-
 assistant := AICodeAssistant new.
-assistant interface key: "your service key".
+assistant interface key: '<your mistral key>'.
 
 "Explain a method"
 assistant explainMethod: Date >> #addDays:.
@@ -32,6 +31,13 @@ assistant writeTestsForMethod: Date >> #addDays:.
 "Generate code based on a given test suite"
 assistant beCodeFromTestsGenerator.
 assistant writeCodeFromTests: RectangleTest buildSuiteFromLocalSelectors.
+```
 
+By default, an AICodeAssistant uses OpenAI interface, but it can be told to use a different one (provided it is supported):
+```smalltalk
+mistral := MistralInterface new.
+mistral key: '<your mistral key>'.
+assistant := AICodeAssistant new.
+assistant interface: mistral.
 ```
 
