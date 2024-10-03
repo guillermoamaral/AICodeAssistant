@@ -69,6 +69,17 @@ AICodeAssistant >> addMethodsContext: aClass [
 	promptContext := promptContext , context
 ]
 
+{ #category : 'accessing' }
+AICodeAssistant >> beCodeFromTestsGenerator [
+	self systemPrompt: self systemPromptForCodeFromTestGeneration 
+]
+
+{ #category : 'accessing' }
+AICodeAssistant >> beTestsGenerator [
+
+	self systemPrompt: self systemPromptForTestGeneration
+]
+
 { #category : 'actions' }
 AICodeAssistant >> clearHistory [
 	self initializeMessages
@@ -206,6 +217,21 @@ AICodeAssistant >> systemPrompt: aString [
 	systemPrompt := aString
 ]
 
+{ #category : 'private' }
+AICodeAssistant >> systemPromptForCodeFromTestGeneration [
+
+	^ 'You are helping a user create Smalltalk code based on a given set of test cases the class should honor.
+Your task is to generate one or more classes with their methods such that the provided tests pass.
+If you find any issue when generating code do say it.'
+]
+
+{ #category : 'private' }
+AICodeAssistant >> systemPromptForTestGeneration [
+
+	^ 'You are helping a user create test cases for a Smalltalk system.
+Your task is to generate a test cases for the provided code.'
+]
+
 { #category : 'services' }
 AICodeAssistant >> useCodeContext: aString [
 
@@ -250,7 +276,7 @@ AICodeAssistant >> useTestsContext: aTestSuite [
 { #category : 'services' }
 AICodeAssistant >> writeCodeFromTests: aTestSuite [
 
-	| answer |
+	| answer parts |
 	self useTestsContext: aTestSuite.
 	answer := self sendPrompt:
 		          'Provide Smalltalk code that passes given tests.
@@ -268,7 +294,8 @@ You answer should be in correct Smalltalk in the following format:
 </code>
 repeating <class> for each class you define, and <method> for every method you define in every class'''.
 	answer tags: { 'bug'. 'thinking'. 'test' }.
-	(answer partTaggedWith: 'code') ifNotNil: [ :code | ^ code ].
+	parts := (answer partsTaggedWith: 'definition') , (answer partsTaggedWith: 'method').
+	parts notEmpty ifTrue: [ ^parts ].
 	(answer partTaggedWith: 'issue') ifNotNil: [ :issue | ^ issue ].
 	^ (answer partTaggedWith: 'thinking') ifNil: [ answer content ]
 ]

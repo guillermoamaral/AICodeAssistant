@@ -17,7 +17,7 @@ AICodeFromTestGenerationBenchmark >> initialize [
 
 	super initialize.
 	maxAttempts := 2.
-	assistant systemPrompt: self systemPrompt
+	assistant beCodeFromTestsGenerator 
 ]
 
 { #category : 'parameters' }
@@ -39,12 +39,4 @@ AICodeFromTestGenerationBenchmark >> run [
 		code := assistant
 			writeCodeFromTests: testSuite.
 		self testCode ]
-]
-
-{ #category : 'parameters' }
-AICodeFromTestGenerationBenchmark >> systemPrompt [
-
-	^ 'You are helping a user create Smalltalk code based on a given set of test cases the class should honor.
-Your task is to generate one or more classes with their methods such that the provided tests pass.
-If you find any issue when generating code do say it.'
 ]

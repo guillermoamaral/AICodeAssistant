@@ -47,10 +47,11 @@ AITestGenerationBenchmark >> generateTestsFor: aCompiledMethod [
 
 { #category : 'initialization' }
 AITestGenerationBenchmark >> initialize [
+
 	super initialize.
 	numIterations := 5.
 	maxAttempts := 2.
-	assistant systemPrompt: self systemPrompt
+	assistant beTestsGenerator
 ]
 
 { #category : 'parameters' }
@@ -72,12 +73,6 @@ AITestGenerationBenchmark >> run [
 	"
 	numIterations timesRepeat: [
 		targetMethods do: [ :method | self generateTestsFor: method ] ]
-]
-
-{ #category : 'parameters' }
-AITestGenerationBenchmark >> systemPrompt [
-	^'You are helping a user create test cases for a Smalltalk system.
-Your task is to generate a test cases for the provided code.'
 ]
 
 { #category : 'parameters' }
