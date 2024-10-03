@@ -66,11 +66,11 @@ AITestGenerationBenchmark >> generateTestsFor: aCompiledMethod [
 		         writeTestsForMethod: aCompiledMethod.
 	tests do: [ :code |
 		result := self tryTestCode: code trim.
-		result testedMethod: aCompiledMethod.
 		attempt := 1.
 		[ result hasError and: [ attempt < maxAttempts ] ] whileTrue: [
 			result := self tryToOvercomeError: result.
 			attempt := attempt + 1 ].
+		result testedMethod: aCompiledMethod.
 		results add: result ]
 ]
 

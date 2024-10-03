@@ -22,5 +22,5 @@ OpenAIInterface >> defaultModel [
 OpenAIInterface >> initializeClient [
 	
 	super initializeClient.
-	client timeout: 60
+	client timeout: 120
 ]
