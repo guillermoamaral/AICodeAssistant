@@ -22,6 +22,12 @@ AIInterfaceTest >> interfaceClass [
 	self subclassResponsibility
 ]
 
+{ #category : 'acccessing' }
+AIInterfaceTest >> key [
+	
+	self subclassResponsibility
+]
+
 { #category : 'set up' }
 AIInterfaceTest >> setUp [
 
