@@ -25,6 +25,13 @@ OpenAIInterface >> initialize [
 	temperature := 0
 ]
 
+{ #category : 'initialization' }
+OpenAIInterface >> initializeClient [
+	
+	super initializeClient.
+	client timeout: 30
+]
+
 { #category : 'requests' }
 OpenAIInterface >> sendMessages: aCollection [
 
