@@ -1,20 +1,15 @@
 Class {
 	#name : 'OpenAIInterfaceTest',
-	#superclass : 'TestCase',
-	#instVars : [
-		'interface'
-	],
+	#superclass : 'AIInterfaceTest',
 	#category : 'AICodeAssistant-Tests',
 	#package : 'AICodeAssistant',
 	#tag : 'Tests'
 }
 
-{ #category : 'running' }
-OpenAIInterfaceTest >> setUp [
+{ #category : 'acccessing' }
+OpenAIInterfaceTest >> interfaceClass [
 
-	super setUp.
-	interface := OpenAIInterface new.
-	interface key: '<your OpenAI key>'
+	^ OpenAIInterface
 ]
 
 { #category : 'tests' }

@@ -4,7 +4,9 @@ Class {
 	#instVars : [
 		'client',
 		'model',
-		'key'
+		'key',
+		'maxTokens',
+		'temperature'
 	],
 	#category : 'AICodeAssistant-Interfaces',
 	#package : 'AICodeAssistant',
@@ -14,6 +16,12 @@ Class {
 { #category : 'accessing' }
 AIInterface class >> url [
 	self subclassResponsibility 
+]
+
+{ #category : 'accessing' }
+AIInterface >> defaultModel [
+
+	self subclassResponsibility
 ]
 
 { #category : 'requests' }
@@ -31,8 +39,10 @@ AIInterface >> get: uri [
 AIInterface >> initialize [
 
 	super initialize.
-	self initializeClient
-
+	self initializeClient.
+	maxTokens := 3500.
+	temperature := 0.
+	model := self defaultModel
 ]
 
 { #category : 'initialization' }
@@ -82,6 +92,35 @@ AIInterface >> post: uri with: json [
 		        post: self url / uri contents: json.
 	client isSuccess ifFalse: [ self error: client contents asString ].
 	^ data
+]
+
+{ #category : 'requests' }
+AIInterface >> sendMessages: aCollection [
+
+	| body answer |
+	body := NeoJSONObject new.
+	body
+		at: 'model' put: model;
+		at: 'messages' put: aCollection;
+		at: 'temperature' put: temperature;
+		at: 'max_tokens' put: maxTokens.
+	answer := self post: 'chat/completions' with: body.
+	^ ((answer at: 'choices') first at: 'message') at: 'content'
+]
+
+{ #category : 'requests' }
+AIInterface >> sendPrompt: text [
+	^self sendPrompt: text as: 'user'
+]
+
+{ #category : 'requests' }
+AIInterface >> sendPrompt: text as: role [
+	| message |
+	message := NeoJSONObject new.
+	message
+		at: 'role' put: (role ifNil: ['user']);
+		at: 'content' put: text.
+	^self sendMessages: {message}
 ]
 
 { #category : 'accessing' }

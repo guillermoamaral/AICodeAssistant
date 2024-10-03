@@ -165,6 +165,12 @@ AICodeAssistant >> interface [
 ]
 
 { #category : 'accessing' }
+AICodeAssistant >> interface: anAIInterface [
+
+	interface := anAIInterface
+]
+
+{ #category : 'accessing' }
 AICodeAssistant >> lastMessage [
 
 	^ messages last
