@@ -83,6 +83,12 @@ AIInterface >> models [
 	^ self get: '/models'
 ]
 
+{ #category : 'accessing' }
+AIInterface >> name [
+	
+	^ self class name withoutSuffix: 'Interface'
+]
+
 { #category : 'requests' }
 AIInterface >> post: uri with: json [
 

@@ -53,7 +53,11 @@ AITestGenerationBenchmark >> clusterBarPlot [
 							         ifFalse: [ Color red ] ] ].
 		cluster color: color.
 		plot := plot ifNil: [ cluster ] ifNotNil: [ plot + cluster ] ].
-	plot xTickLabels: (methods collect: #selector).
+	plot
+		title: 'Test generation benchmark (', assistant interfaceName, ')';
+		xlabel:
+			' black = invalid, green = passed, orange = failed, red = error ';
+		xTickLabels: (methods collect: #selector).
 	^ plot open
 ]
 

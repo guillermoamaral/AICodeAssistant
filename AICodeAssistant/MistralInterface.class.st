@@ -17,3 +17,10 @@ MistralInterface >> defaultModel [
 
 	 ^'pixtral-12b-latest'
 ]
+
+{ #category : 'initialization' }
+MistralInterface >> initializeClient [
+	
+	super initializeClient.
+	client timeout: 120
+]

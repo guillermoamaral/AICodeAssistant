@@ -171,6 +171,12 @@ AICodeAssistant >> interface: anAIInterface [
 ]
 
 { #category : 'accessing' }
+AICodeAssistant >> interfaceName [
+
+	^ interface name
+]
+
+{ #category : 'accessing' }
 AICodeAssistant >> lastMessage [
 
 	^ messages last
