@@ -29,7 +29,7 @@ OpenAIInterface >> initialize [
 OpenAIInterface >> initializeClient [
 	
 	super initializeClient.
-	client timeout: 30
+	client timeout: 60
 ]
 
 { #category : 'requests' }

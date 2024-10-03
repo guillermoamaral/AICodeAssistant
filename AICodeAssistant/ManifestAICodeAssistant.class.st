@@ -10,8 +10,29 @@ Class {
 }
 
 { #category : 'code-critics' }
+ManifestAICodeAssistant class >> ruleCollectionMessagesToExternalObjectRuleV1FalsePositive [
+
+	<ignoreForCoverage>
+	^ #(#(#(#RGMethodDefinition #(#AITestGenerationBenchmark #clusterBarPlot #false)) #'2024-10-03T10:37:35.646-03:00') )
+]
+
+{ #category : 'code-critics' }
 ManifestAICodeAssistant class >> ruleCollectionProtocolRuleV1FalsePositive [
 
 	<ignoreForCoverage>
-	^ #(#(#(#RGMethodDefinition #(#AITestGenerationBenchmark #generateTestsFor: #false)) #'2024-10-02T00:07:32.056-03:00') )
+	^ #(#(#(#RGMethodDefinition #(#AITestGenerationBenchmark #generateTestsFor: #false)) #'2024-10-02T00:07:32.056-03:00') #(#(#RGMethodDefinition #(#AITestGenerationBenchmark #clusterBarPlot #false)) #'2024-10-03T10:37:38.301-03:00') )
+]
+
+{ #category : 'code-critics' }
+ManifestAICodeAssistant class >> ruleLongMethodsRuleV1FalsePositive [
+
+	<ignoreForCoverage>
+	^ #(#(#(#RGMethodDefinition #(#AITestGenerationBenchmark #clusterBarPlot #false)) #'2024-10-03T11:09:52.318-03:00') )
+]
+
+{ #category : 'code-critics' }
+ManifestAICodeAssistant class >> ruleTempsReadBeforeWrittenRuleV1FalsePositive [
+
+	<ignoreForCoverage>
+	^ #(#(#(#RGMethodDefinition #(#AITestGenerationBenchmark #clusterBarPlot #false)) #'2024-10-03T10:41:12.154-03:00') )
 ]

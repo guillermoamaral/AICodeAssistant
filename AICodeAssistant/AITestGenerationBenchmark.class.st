@@ -28,6 +28,35 @@ AITestGenerationBenchmark >> canCompile: aString in: aClass [
 	^ result notNil
 ]
 
+{ #category : 'results' }
+AITestGenerationBenchmark >> clusterBarPlot [
+
+	| plot categories grouped data cluster methods color |
+	categories := AITestGenerationResult availableStatuses.
+	grouped := Dictionary new.
+	results do: [ :r |
+		(grouped at: r testedMethod ifAbsentPut: [ OrderedCollection new ])
+			add: r ].
+	methods := grouped keys asArray.
+	categories do: [ :status |
+		data := methods collect: [ :m |
+			        (grouped at: m) count: [ :r | r status = status ] ].
+		cluster := RSBarPlotNew new data: data.
+		color := status = #invalid
+			         ifTrue: [ Color black ]
+			         ifFalse: [
+				         status = #passed
+					         ifTrue: [ Color green ]
+					         ifFalse: [
+						         status = #failed
+							         ifTrue: [ Color orange ]
+							         ifFalse: [ Color red ] ] ].
+		cluster color: color.
+		plot := plot ifNil: [ cluster ] ifNotNil: [ plot + cluster ] ].
+	plot xTickLabels: (methods collect: #selector).
+	^ plot open
+]
+
 { #category : 'private' }
 AITestGenerationBenchmark >> generateTestsFor: aCompiledMethod [
 
@@ -141,5 +170,5 @@ AITestGenerationBenchmark >> tryToOvercomeError: anAITestAssistantResult [
 			          prompt
 			          , ' Enclose the code between <test> and </test> tags'.
 	code := (answer partTaggedWith: 'test') ifNil: [''].
-	^ self tryTestCode: code
+	^ self tryTestCode: code trim
 ]

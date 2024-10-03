@@ -14,6 +14,11 @@ Class {
 	#tag : 'Benchmarks'
 }
 
+{ #category : 'acccessing' }
+AITestGenerationResult class >> availableStatuses [
+	^{ #invalid. #passed. #failed. #error }
+]
+
 { #category : 'accessing' }
 AITestGenerationResult >> beError: anError [
 
@@ -101,6 +106,12 @@ AITestGenerationResult >> printOn: aStream [
 
 { #category : 'accessing' }
 AITestGenerationResult >> result [
+
+	^ status
+]
+
+{ #category : 'accessing' }
+AITestGenerationResult >> status [
 
 	^ status
 ]
