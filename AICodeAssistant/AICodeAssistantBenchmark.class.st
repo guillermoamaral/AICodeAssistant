@@ -16,6 +16,12 @@ AICodeAssistantBenchmark >> assistant [
 	^ assistant
 ]
 
+{ #category : 'accessing' }
+AICodeAssistantBenchmark >> assistant: anAICodeAssistant [
+
+	assistant := anAICodeAssistant
+]
+
 { #category : 'intialization' }
 AICodeAssistantBenchmark >> initialize [
 

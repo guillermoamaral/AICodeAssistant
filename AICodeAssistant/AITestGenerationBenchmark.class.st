@@ -4,34 +4,18 @@ Class {
 	#instVars : [
 		'numIterations',
 		'maxAttempts',
-		'targetMethods'
+		'targetMethods',
+		'initialHistoryIndex'
 	],
 	#category : 'AICodeAssistant-Benchmarks',
 	#package : 'AICodeAssistant',
 	#tag : 'Benchmarks'
 }
 
-{ #category : 'private' }
-AITestGenerationBenchmark >> canCompile: aString in: aClass [
-	"
-	self new canCompile: 'm ^' in: Class
-	"
-
-	| result |
-	result := [
-	          OpalCompiler new
-		          source: aString;
-		          class: aClass;
-		          compile ]
-		          on: Error
-		          do: [  ].
-	^ result notNil
-]
-
 { #category : 'results' }
 AITestGenerationBenchmark >> clusterBarPlot [
 
-	| plot categories grouped data cluster methods color |
+	| plot categories grouped data cluster methods color k |
 	categories := AITestGenerationResult availableStatuses.
 	grouped := Dictionary new.
 	results do: [ :r |
@@ -40,7 +24,8 @@ AITestGenerationBenchmark >> clusterBarPlot [
 	methods := grouped keys asArray.
 	categories do: [ :status |
 		data := methods collect: [ :m |
-			        (grouped at: m) count: [ :r | r status = status ] ].
+			        k := (grouped at: m) count: [ :r | r status = status ].
+			        k asFloat / (grouped at: m) size ].
 		cluster := RSBarPlotNew new data: data.
 		color := status = #invalid
 			         ifTrue: [ Color black ]
@@ -54,7 +39,7 @@ AITestGenerationBenchmark >> clusterBarPlot [
 		cluster color: color.
 		plot := plot ifNil: [ cluster ] ifNotNil: [ plot + cluster ] ].
 	plot
-		title: 'Test generation benchmark (', assistant interfaceName, ')';
+		title: 'Test generation benchmark (' , assistant interfaceName , ')';
 		xlabel:
 			' black = invalid, green = passed, orange = failed, red = error ';
 		xTickLabels: (methods collect: #selector).
@@ -71,8 +56,8 @@ AITestGenerationBenchmark >> generateTestsFor: aCompiledMethod [
 	tests do: [ :code |
 		result := self tryTestCode: code trim.
 		attempt := 1.
-		[ result hasError and: [ attempt < maxAttempts ] ] whileTrue: [
-			result := self tryToOvercomeError: result.
+		[ result hasPassed not and: [ attempt < maxAttempts ] ] whileTrue: [
+			result := self tryToSolveIssuesOf: result.
 			attempt := attempt + 1 ].
 		result testedMethod: aCompiledMethod.
 		results add: result ]
@@ -99,6 +84,12 @@ AITestGenerationBenchmark >> numIterations: aNumber [
 	numIterations := aNumber
 ]
 
+{ #category : 'private' }
+AITestGenerationBenchmark >> restoreHistory [
+
+	assistant keepHistoryUpTo: initialHistoryIndex 
+]
+
 { #category : 'running' }
 AITestGenerationBenchmark >> run [
 	"
@@ -116,14 +107,34 @@ AITestGenerationBenchmark >> targetMethods: aCollection [
 ]
 
 { #category : 'private' }
+AITestGenerationBenchmark >> tryOvercomeCompilationError: anAITestAssistantResult [
+
+	| prompt answer code |
+	prompt := String streamContents: [ :strm |
+		          strm
+			          nextPutAll:
+				          'The code you have provided resulted in the compilation error: ';
+			          nextPutAll: anAITestAssistantResult error description;
+			          nextPutAll: '. Provide a version that does not fail.' ].
+	answer := assistant
+		          clearPromptContext;
+		          sendPrompt:
+			          prompt
+			          , ' Enclose the code between <test> and </test> tags'.
+	code := (answer partTaggedWith: 'test') ifNil: [ '' ].
+	^ self tryTestCode: code trim
+]
+
+{ #category : 'private' }
 AITestGenerationBenchmark >> tryTestCode: aString [
 
 	| result selector suite test testResult error |
 	result := AITestGenerationResult new
 		          conversation: assistant messages copy;
 		          testCode: aString.
-	(self canCompile: aString in: TestCase) ifFalse: [
-		^ result beInvalid ].
+	[ self tryToCompile: aString in: TestCase ]
+		on: Error
+		do: [ :e | ^ result beInvalidWith: e ].
 	selector := TestCase compile: 'test_AiGenerated_' , aString.
 	suite := TestSuite named: selector.
 	test := TestCase selector: selector.
@@ -133,46 +144,93 @@ AITestGenerationBenchmark >> tryTestCode: aString [
 		[ test runCase ]
 			on: Error
 			do: [ :e | error := e ].
-		^ result beError: error ].
+		^ result beErrorWith: error ].
 	testResult hasFailures
-		ifTrue: [ result beFailed ]
+		ifTrue: [ result beFailureWith: testResult failures anyOne ]
 		ifFalse: [ result bePassed ].
 	^ result
 ]
 
 { #category : 'private' }
+AITestGenerationBenchmark >> tryToCompile: aString in: aClass [
+
+	OpalCompiler new
+		source: aString;
+		class: aClass;
+		compile
+]
+
+{ #category : 'private' }
 AITestGenerationBenchmark >> tryToOvercomeError: anAITestAssistantResult [
 
-	| error prompt answer code |
+	| error intro description answer code |
 	error := anAITestAssistantResult error.
-	prompt := error class == MessageNotUnderstood
-		          ifTrue: [
-			          String streamContents: [ :strm |
-				          strm
-					          nextPutAll: 'This code you have provided ';
-					          nextPutAll: anAITestAssistantResult testCode;
-					          nextPutAll:
-						          ' resulted in a MessageNotUnderstood exception since ';
-					          nextPutAll: error message selector;
-					          nextPutAll: ' is not understood by an instance of ';
-					          nextPutAll: error receiver class name;
-					          nextPutAll:
-						          '. Provide a better version based on the messages that object understands: '.
-				          error receiver class selectors
-					          do: [ :s | strm nextPutAll: s ]
-					          separatedBy: [ strm nextPut: $, ] ] ]
-		          ifFalse: [
-			          String streamContents: [ :strm |
-				          strm
-					          nextPutAll:
-						          'The code you have provided resulted in a the exception: ';
-					          nextPutAll: error description;
-					          nextPutAll: '. Provide a version that does not fail.' ] ].
+	intro := String streamContents: [ :strm |
+		         strm
+			         nextPutAll: 'This test you have provided <test>';
+			         nextPutAll: anAITestAssistantResult testCode;
+			         nextPutAll: '</test> resulted in ' ].
+
+	description := error class == MessageNotUnderstood
+		               ifTrue: [
+			               String streamContents: [ :strm |
+				               strm
+					               nextPutAll:
+						               'a MessageNotUnderstood exception since ';
+					               nextPutAll: error message selector;
+					               nextPutAll:
+						               ' is not understood by an instance of ';
+					               nextPutAll: error receiver class name;
+					               nextPutAll:
+						               '. Provide a better version based on the the following messages that object understands: '.
+				               error receiver class selectors
+					               do: [ :s | strm nextPutAll: s ]
+					               separatedBy: [ strm nextPut: $, ].
+				               strm cr ] ]
+		               ifFalse: [
+			               String streamContents: [ :strm |
+				               strm
+					               nextPutAll: 'the following exception: ';
+					               nextPutAll: error description;
+					               nextPutAll:
+						               '. Provide a version that does not fall into this exception.';
+					               cr ] ].
+	answer := assistant
+		          clearPromptContext;
+		          sendPrompt: intro , description
+			          , ' Enclose the code between <test> and </test> tags'.
+	code := (answer partTaggedWith: 'test') ifNil: [ '' ].
+	^ self tryTestCode: code trim
+]
+
+{ #category : 'private' }
+AITestGenerationBenchmark >> tryToOvercomeFailure: anAITestAssistantResult [
+
+	| description prompt answer code |
+	[ anAITestAssistantResult failure performTest ]
+		on: Exception
+		do: [ :e | description := e description ].
+	prompt := String streamContents: [ :strm |
+		          strm
+			          nextPutAll:
+				          'The code you have provided resulted in the following failure: ';
+			          nextPutAll: description;
+			          nextPutAll: '. Provide a version that does not fail.' ].
 	answer := assistant
 		          clearPromptContext;
 		          sendPrompt:
 			          prompt
 			          , ' Enclose the code between <test> and </test> tags'.
-	code := (answer partTaggedWith: 'test') ifNil: [''].
+	code := (answer partTaggedWith: 'test') ifNil: [ '' ].
 	^ self tryTestCode: code trim
+]
+
+{ #category : 'private' }
+AITestGenerationBenchmark >> tryToSolveIssuesOf: anAITestAssistantResult [
+
+	anAITestAssistantResult isInvalid ifTrue: [
+		^ self tryOvercomeCompilationError: anAITestAssistantResult ].
+	anAITestAssistantResult hasError ifTrue: [
+		^ self tryToOvercomeError: anAITestAssistantResult ].
+	^ self tryToOvercomeFailure: anAITestAssistantResult
 ]

@@ -6,6 +6,7 @@ Class {
 		'conversation',
 		'testCode',
 		'error',
+		'failure',
 		'covered',
 		'status'
 	],
@@ -20,22 +21,30 @@ AITestGenerationResult class >> availableStatuses [
 ]
 
 { #category : 'accessing' }
-AITestGenerationResult >> beError: anError [
+AITestGenerationResult >> beErrorWith: anError [
 
 	status := #error.
 	error := anError
 ]
 
 { #category : 'accessing' }
-AITestGenerationResult >> beFailed [
+AITestGenerationResult >> beFailureWith: anObject [
 
-	status := #failed
+	status := #failed.
+	failure := anObject
 ]
 
 { #category : 'accessing' }
 AITestGenerationResult >> beInvalid [
 
 	status := #invalid
+]
+
+{ #category : 'accessing' }
+AITestGenerationResult >> beInvalidWith: compilationError [
+
+	status := #invalid.
+	error := compilationError
 ]
 
 { #category : 'accessing' }
@@ -74,6 +83,12 @@ AITestGenerationResult >> error [
 	^ error
 ]
 
+{ #category : 'accessing' }
+AITestGenerationResult >> failure [
+
+	^ failure
+]
+
 { #category : 'testing' }
 AITestGenerationResult >> hasError [
 	^status == #error and: [error notNil]
@@ -96,6 +111,12 @@ AITestGenerationResult >> initialize [
 	super initialize.
 	status := #none.
 	covered := false
+]
+
+{ #category : 'testing' }
+AITestGenerationResult >> isInvalid [
+
+	^ status == #invalid
 ]
 
 { #category : 'printing' }

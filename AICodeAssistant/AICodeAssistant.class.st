@@ -176,6 +176,12 @@ AICodeAssistant >> interfaceName [
 	^ interface name
 ]
 
+{ #category : 'services' }
+AICodeAssistant >> keepHistoryUpTo: index [
+
+	messages := messages copyFrom: 1 to: index
+]
+
 { #category : 'accessing' }
 AICodeAssistant >> lastMessage [
 
@@ -317,7 +323,8 @@ AICodeAssistant >> writeTestForCode: aString [
 
 	self useCodeContext: aString.
 	^ self sendPrompt:
-		  'Write a unit test for the given code. Do use testX for test selector.
+		  'Write a unit test for the given code.
+Do use testX for test selector and avoid including the class and >> before the selector. 
 Your answer should be in correct Smalltalk in the following format:
 <bug>if you think there iss a problem, describe it here</bug>
 <thinking>your rational and explanation here, be brief</thinking>
@@ -330,7 +337,8 @@ AICodeAssistant >> writeTestForMethod: aCompiledMethod [
 	| answer |
 	self useMethodContext: aCompiledMethod.
 	answer := self sendPrompt:
-		          'Write a unit test, only one unit test, for the given method. Do use testX for test selector.
+		          'Write a unit test, only one unit test, for the given method.
+Do use testX for test selector and avoid including the class and >> before the selector. 
 Your answer should be in correct Smalltalk in the following format:
 <bug>if you think there is a problem, describe it here</bug>
 <thinking>your rational and explanation here, be brief</thinking>
@@ -347,7 +355,8 @@ AICodeAssistant >> writeTestsForMethod: aCompiledMethod [
 	| answer |
 	self useMethodContext: aCompiledMethod.
 	answer := self sendPrompt:
-		  'Write as many tests as you can for the given method. Do use testX for test selectors.
+		          'Write as many tests as you can for the given method.
+Do use testX for test selector and avoid including the class and >> before the selector.
 It is a good idea to generate one test cases for simple use cases, border conditions, different argument classes, etc.
 Your answer should be in correct Smalltalk in the following format:
 <bug>if you think there is a problem, describe it here</bug>
