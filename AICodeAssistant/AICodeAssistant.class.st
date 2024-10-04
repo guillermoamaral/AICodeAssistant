@@ -306,7 +306,9 @@ You answer should be in correct Smalltalk in the following format:
 <thinking>your rational and explanation here, be brief</thinking>
 <code>
 	<class>
-		<definition>Smalltalk class definition here</definition>
+		<definition>Smalltalk class name here
+			<instancevars>Instance variable here, space-separated</instancevars>
+		</definition>
 		<method>Smalltalk method code here; avoid including the class and >> before the selector</method>
 		<method>Smalltalk method code here; avoid including the class and >> before the selector</method>
 		<method>Smalltalk method code here; avoid including the class and >> before the selector</method>

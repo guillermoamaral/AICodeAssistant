@@ -132,12 +132,12 @@ AITestGenerationBenchmark >> tryTestCode: aString [
 	result := AITestGenerationResult new
 		          conversation: assistant messages copy;
 		          testCode: aString.
-	[ self tryToCompile: aString in: TestCase ]
+	[ self tryToCompile: aString in: AIGeneratedTest ]
 		on: Error
 		do: [ :e | ^ result beInvalidWith: e ].
-	selector := TestCase compile: 'test_AiGenerated_' , aString.
+	selector := AIGeneratedTest compile: 'test_(AiGenerated)_' , aString.
 	suite := TestSuite named: selector.
-	test := TestCase selector: selector.
+	test := AIGeneratedTest selector: selector.
 	suite addTest: test.
 	testResult := suite run.
 	testResult hasErrors ifTrue: [
