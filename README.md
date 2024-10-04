@@ -21,11 +21,9 @@ assistant interface key: '<your AI API key>'.
 "Explain a method"
 assistant explainMethod: Date >> #addDays:.
 
-"Generate a tests"
+"Generate a tests from code, one or more"
 assistant beTestsGenerator.
-"One test"
 assistant writeTestForMethod: Date >> #addDays:.
-"Several tests covering different cases" 
 assistant writeTestsForMethod: Date >> #addDays:.
 
 "Generate code based on a given test suite"
