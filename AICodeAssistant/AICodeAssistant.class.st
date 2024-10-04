@@ -1,3 +1,12 @@
+"
+This is the main object of the framework and it is aimed at providing handy AI-based services such as:
+
+- Explain a given piece of code (source, method)
+- Categorize methods
+- Generate tests from a given piece of code (source, method, class)
+- Generate code from a given test suite (that honors such tests)
+- more
+"
 Class {
 	#name : 'AICodeAssistant',
 	#superclass : 'Object',
@@ -12,7 +21,7 @@ Class {
 	#tag : 'Base'
 }
 
-{ #category : 'services' }
+{ #category : 'context' }
 AICodeAssistant >> addClassContext: aClass [
 	| context |
 	context := String streamContents: [:strm | 
@@ -37,7 +46,7 @@ AICodeAssistant >> addContextsFrom: aString [
 	found in aString"
 ]
 
-{ #category : 'services' }
+{ #category : 'context' }
 AICodeAssistant >> addMethodContext: aCompiledMethod [
 
 	| context |
@@ -53,7 +62,7 @@ AICodeAssistant >> addMethodContext: aCompiledMethod [
 	promptContext := promptContext , context
 ]
 
-{ #category : 'services' }
+{ #category : 'context' }
 AICodeAssistant >> addMethodsContext: aClass [
 
 	| context |
@@ -176,12 +185,6 @@ AICodeAssistant >> interfaceName [
 	^ interface name
 ]
 
-{ #category : 'services' }
-AICodeAssistant >> keepHistoryUpTo: index [
-
-	messages := messages copyFrom: 1 to: index
-]
-
 { #category : 'accessing' }
 AICodeAssistant >> lastMessage [
 
@@ -250,7 +253,7 @@ AICodeAssistant >> systemPromptForTestGeneration [
 Your task is to generate a test cases for the provided code.'
 ]
 
-{ #category : 'services' }
+{ #category : 'context' }
 AICodeAssistant >> useCodeContext: aString [
 
 	promptContext := String streamContents: [ :strm |
@@ -261,7 +264,7 @@ AICodeAssistant >> useCodeContext: aString [
 			                 nextPutAll: aString ] 
 ]
 
-{ #category : 'services' }
+{ #category : 'context' }
 AICodeAssistant >> useMethodContext: aCompiledMethod [
 
 	promptContext := String streamContents: [ :strm |
@@ -273,7 +276,7 @@ AICodeAssistant >> useMethodContext: aCompiledMethod [
 			                 nextPutAll: aCompiledMethod sourceCode ]
 ]
 
-{ #category : 'services' }
+{ #category : 'context' }
 AICodeAssistant >> useTestsContext: aTestSuite [
 
 	promptContext := String streamContents: [ :strm |
@@ -304,16 +307,17 @@ You answer should be in correct Smalltalk in the following format:
 <code>
 	<class>
 		<definition>Smalltalk class definition here</definition>
-		<method>Smalltalk method code here</method>
-		<method>Smalltalk method code here</method>
-		<method>Smalltalk method code here</method>
+		<method>Smalltalk method code here; avoid including the class and >> before the selector</method>
+		<method>Smalltalk method code here; avoid including the class and >> before the selector</method>
+		<method>Smalltalk method code here; avoid including the class and >> before the selector</method>
 		...
 	</class>
 </code>
 repeating <class> for each class you define, and <method> for every method you define in every class'''.
 	answer tags: { 'bug'. 'thinking'. 'test' }.
-	parts := (answer partsTaggedWith: 'definition') , (answer partsTaggedWith: 'method').
-	parts notEmpty ifTrue: [ ^parts ].
+	parts := (answer partsTaggedWith: 'definition')
+	         , (answer partsTaggedWith: 'method').
+	parts notEmpty ifTrue: [ ^ parts ].
 	(answer partTaggedWith: 'issue') ifNotNil: [ :issue | ^ issue ].
 	^ (answer partTaggedWith: 'thinking') ifNil: [ answer content ]
 ]

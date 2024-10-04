@@ -1,3 +1,6 @@
+"
+This abstract class respresents an interface with known web AI APIs to interact with LLMs.
+"
 Class {
 	#name : 'AIInterface',
 	#superclass : 'Object',

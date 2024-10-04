@@ -1,3 +1,6 @@
+"
+This classes are meant to run some benchmarks on services provided by AICodeAssistant.
+"
 Class {
 	#name : 'AICodeAssistantBenchmark',
 	#superclass : 'Object',
