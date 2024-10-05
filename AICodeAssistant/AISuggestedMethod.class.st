@@ -1,0 +1,58 @@
+Class {
+	#name : 'AISuggestedMethod',
+	#superclass : 'Object',
+	#instVars : [
+		'class',
+		'sourceCode'
+	],
+	#category : 'AICodeAssistant-Base',
+	#package : 'AICodeAssistant',
+	#tag : 'Base'
+}
+
+{ #category : 'testing' }
+AISuggestedMethod >> canBeCompiled [
+
+	(class isNil or: [ class exists ]) ifFalse: [ ^ false ].
+	[
+	OpalCompiler new
+		source: sourceCode;
+		class: class realClass;
+		compile ]
+		on: Error
+		do: [ ^ false ].
+	^ true
+]
+
+{ #category : 'printing' }
+AISuggestedMethod >> printOn: aStream [
+
+	class ifNotNil: [
+		aStream
+			nextPutAll: class name; nextPutAll: ' >> #'].
+	aStream nextPutAll: sourceCode
+]
+
+{ #category : 'accessing' }
+AISuggestedMethod >> sourceCode [
+
+	^ sourceCode
+]
+
+{ #category : 'accessing' }
+AISuggestedMethod >> sourceCode: aString [
+
+	sourceCode := aString
+]
+
+{ #category : 'accessing' }
+AISuggestedMethod >> suggestedClass [
+	
+	^class
+]
+
+{ #category : 'accessing' }
+AISuggestedMethod >> suggestedClass: anAISuggestedClass [
+	
+	class := anAISuggestedClass
+]

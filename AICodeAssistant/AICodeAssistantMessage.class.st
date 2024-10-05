@@ -72,21 +72,34 @@ AICodeAssistantMessage >> partTaggedWith: tag [
 ]
 
 { #category : 'services' }
+AICodeAssistantMessage >> partTaggedWith: tag in: aString [
+
+	| parts |
+	parts := self partsTaggedWith: tag in: aString.
+	^ parts notEmpty ifTrue: [ parts anyOne ]
+]
+
+{ #category : 'services' }
 AICodeAssistantMessage >> partsTaggedWith: tag [
 
-	| parts stream opening closing i j |
+	^ self partsTaggedWith: tag in: content
+]
+
+{ #category : 'services' }
+AICodeAssistantMessage >> partsTaggedWith: tag in: aString [
+
+	| parts opening closing i j |
 	parts := OrderedCollection new.
-	stream := content readStream.
 	opening := '<' , tag , '>'.
 	closing := '</' , tag , '>'.
-	i := content indexOfSubCollection: opening startingAt: 1.
+	i := aString indexOfSubCollection: opening startingAt: 1.
 	[ i > 0 ] whileTrue: [
 		i := i + opening size.
-		j := content indexOfSubCollection: closing startingAt: i.
+		j := aString indexOfSubCollection: closing startingAt: i.
 		j > 0
 			ifTrue: [
-				parts add: (content copyFrom: i to: j - 1).
-				i := content
+				parts add: (aString copyFrom: i to: j - 1).
+				i := aString
 					     indexOfSubCollection: opening
 					     startingAt: j + closing size ]
 			ifFalse: [ i := 0 ] ].

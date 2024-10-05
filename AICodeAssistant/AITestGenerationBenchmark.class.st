@@ -53,8 +53,8 @@ AITestGenerationBenchmark >> generateTestsFor: aCompiledMethod [
 	tests := assistant
 		         clearHistory;
 		         writeTestsForMethod: aCompiledMethod.
-	tests do: [ :code |
-		result := self tryTestCode: code trim.
+	tests do: [ :test |
+		result := self tryTestCode: test sourceCode.
 		attempt := 1.
 		[ result hasPassed not and: [ attempt < maxAttempts ] ] whileTrue: [
 			result := self tryToSolveIssuesOf: result.
@@ -135,7 +135,7 @@ AITestGenerationBenchmark >> tryTestCode: aString [
 	[ self tryToCompile: aString in: AIGeneratedTest ]
 		on: Error
 		do: [ :e | ^ result beInvalidWith: e ].
-	selector := AIGeneratedTest compile: 'test_(AiGenerated)_' , aString.
+	selector := AIGeneratedTest compile: 'test_AiGenerated_' , aString.
 	suite := TestSuite named: selector.
 	test := AIGeneratedTest selector: selector.
 	suite addTest: test.

@@ -297,7 +297,7 @@ AICodeAssistant >> useTestsContext: aTestSuite [
 { #category : 'services' }
 AICodeAssistant >> writeCodeFromTests: aTestSuite [
 
-	| answer parts |
+	| answer parts name class |
 	self useTestsContext: aTestSuite.
 	answer := self sendPrompt:
 		          'Provide Smalltalk code that passes given tests.
@@ -306,9 +306,10 @@ You answer should be in correct Smalltalk in the following format:
 <thinking>your rational and explanation here, be brief</thinking>
 <code>
 	<class>
-		<definition>Smalltalk class name here
-			<instancevars>Instance variable here, space-separated</instancevars>
-		</definition>
+		<superclass>Smalltalk superclass name here</superclass>
+		<name>Smalltalk class name here</name>
+		<instanceVariables>Instance variables here, space-separated</instanceVariables>
+		<classVariables>Class variables here, space-separated</instanceVariables>
 		<method>Smalltalk method code here; avoid including the class and >> before the selector</method>
 		<method>Smalltalk method code here; avoid including the class and >> before the selector</method>
 		<method>Smalltalk method code here; avoid including the class and >> before the selector</method>
@@ -316,10 +317,18 @@ You answer should be in correct Smalltalk in the following format:
 	</class>
 </code>
 repeating <class> for each class you define, and <method> for every method you define in every class'''.
-	answer tags: { 'bug'. 'thinking'. 'test' }.
-	parts := (answer partsTaggedWith: 'definition')
-	         , (answer partsTaggedWith: 'method').
-	parts notEmpty ifTrue: [ ^ parts ].
+	parts := answer partsTaggedWith: 'class'.
+	parts notEmpty ifTrue: [
+		^ parts collect: [ :body |
+			  name := answer partTaggedWith: 'name' in: body.
+			  class := AISuggestedClass named: name.
+			  (answer partTaggedWith: 'superclass' in: body) ifNotNil: [ :n |
+				  class superclassName: n ].
+			  (answer partTaggedWith: 'instanceVariables' in: body) ifNotNil: [
+				  :vars | class instanceVariableNames: (vars substrings: ' ') ].
+			  (answer partsTaggedWith: 'method' in: body) do: [ :code |
+				  class addMethod: (AISuggestedMethod new sourceCode: code trim) ].
+			  class ] ].
 	(answer partTaggedWith: 'issue') ifNotNil: [ :issue | ^ issue ].
 	^ (answer partTaggedWith: 'thinking') ifNil: [ answer content ]
 ]
@@ -327,20 +336,27 @@ repeating <class> for each class you define, and <method> for every method you d
 { #category : 'services' }
 AICodeAssistant >> writeTestForCode: aString [
 
+	| answer class |
 	self useCodeContext: aString.
-	^ self sendPrompt:
-		  'Write a unit test for the given code.
+	answer := self sendPrompt: 'Write a unit test for the given code.
 Do use testX for test selector and avoid including the class and >> before the selector. 
 Your answer should be in correct Smalltalk in the following format:
 <bug>if you think there iss a problem, describe it here</bug>
 <thinking>your rational and explanation here, be brief</thinking>
-<code>pure Smalltalk code for the test case</code>'
+<test>pure Smalltalk code for the test case</test>'.
+	(answer partTaggedWith: 'test') ifNotNil: [ :test |
+		class := AISuggestedClass named: 'TestCase'.
+		^ AISuggestedMethod new
+			  suggestedClass: class;
+			  sourceCode: test trim ].
+	(answer partTaggedWith: 'bug') ifNotNil: [ :bug | ^ bug ].
+	^ (answer partTaggedWith: 'thinking') ifNil: [ answer content ]
 ]
 
 { #category : 'services' }
 AICodeAssistant >> writeTestForMethod: aCompiledMethod [
 
-	| answer |
+	| answer class |
 	self useMethodContext: aCompiledMethod.
 	answer := self sendPrompt:
 		          'Write a unit test, only one unit test, for the given method.
@@ -349,8 +365,11 @@ Your answer should be in correct Smalltalk in the following format:
 <bug>if you think there is a problem, describe it here</bug>
 <thinking>your rational and explanation here, be brief</thinking>
 <test>pure Smalltalk code for the test case, without any ```marks</test>'.
-	answer tags: { 'bug'. 'thinking'. 'test' }.
-	(answer partTaggedWith: 'test') ifNotNil: [ :test | ^ test ].
+	(answer partTaggedWith: 'test') ifNotNil: [ :test |
+		class := AISuggestedClass named: 'TestCase'.
+		^ AISuggestedMethod new
+			  suggestedClass: class;
+			  sourceCode: test trim ].
 	(answer partTaggedWith: 'bug') ifNotNil: [ :bug | ^ bug ].
 	^ (answer partTaggedWith: 'thinking') ifNil: [ answer content ]
 ]
@@ -358,7 +377,7 @@ Your answer should be in correct Smalltalk in the following format:
 { #category : 'services' }
 AICodeAssistant >> writeTestsForMethod: aCompiledMethod [
 
-	| answer |
+	| answer class parts |
 	self useMethodContext: aCompiledMethod.
 	answer := self sendPrompt:
 		          'Write as many tests as you can for the given method.
@@ -368,8 +387,13 @@ Your answer should be in correct Smalltalk in the following format:
 <bug>if you think there is a problem, describe it here</bug>
 <thinking>your rational and explanation here, be brief</thinking>
 Enclose each test between <test> and </test>, just pure Smalltalk code without any ``` marks.'.
-	answer tags: { 'bug'. 'thinking'. 'test' }.
-	(answer partsTaggedWith: 'test') ifNotNil: [ :tests | ^ tests ].
+	parts := answer partsTaggedWith: 'test'.
+	parts notEmpty ifTrue: [
+		class := AISuggestedClass named: 'TestCase'.
+		^ parts collect: [ :test |
+			  AISuggestedMethod new
+				  suggestedClass: class;
+				  sourceCode: test trim ] ].
 	(answer partTaggedWith: 'bug') ifNotNil: [ :bug | ^ bug ].
 	^ (answer partTaggedWith: 'thinking') ifNil: [ answer content ]
 ]
