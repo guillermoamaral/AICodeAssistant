@@ -1,3 +1,6 @@
+"
+This object represents the messages exchanged between an AICodeAssistant and the underliing AIInterface.
+"
 Class {
 	#name : 'AICodeAssistantMessage',
 	#superclass : 'Object',

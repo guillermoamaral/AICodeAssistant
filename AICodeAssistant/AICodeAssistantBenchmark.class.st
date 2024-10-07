@@ -32,3 +32,9 @@ AICodeAssistantBenchmark >> initialize [
 	assistant := AICodeAssistant new.
 	results := OrderedCollection new
 ]
+
+{ #category : 'accessing' }
+AICodeAssistantBenchmark >> results [
+
+	^ results
+]

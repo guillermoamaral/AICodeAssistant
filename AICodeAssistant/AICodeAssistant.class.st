@@ -144,9 +144,10 @@ AICodeAssistant >> explainCode: aString [
 { #category : 'services' }
 AICodeAssistant >> explainMethod: aCompiledMethod [
 
+	| answer |
 	self useMethodContext: aCompiledMethod.
-	^ self sendPrompt:
-		  'Explain the given method'
+	answer := self sendPrompt: 'Explain the given method'.
+	^ answer content
 ]
 
 { #category : 'private' }
@@ -243,12 +244,29 @@ AICodeAssistant >> promptContext: aString [
 { #category : 'private' }
 AICodeAssistant >> requestCodeWith: aString [
 
-	| classes answer |
+	| answer classes |
 	answer := self sendPrompt: aString , self codeFormatSpecification.
 	classes := self extractClassesFrom: answer.
-	classes ifNotNil: [ ^ classes ].
-	(answer partTaggedWith: 'issue') ifNotNil: [ :issue | ^ issue ].
-	^ (answer partTaggedWith: 'thinking') ifNil: [ answer content ]
+	^ AICodeGenerationResult new
+		  classes: classes;
+		  issue: (answer partTaggedWith: 'issue');
+		  thinking: (answer partTaggedWith: 'thinking')
+]
+
+{ #category : 'private' }
+AICodeAssistant >> requestTestsWith: aString [
+
+	| answer class tests |
+	answer := self sendPrompt: aString , self testFormatSpecification.
+	class := AISuggestedClass named: 'AIGeneratedTest'.
+	tests := (answer partsTaggedWith: 'test') collect: [ :test |
+		         AISuggestedMethod new
+			         suggestedClass: class;
+			         sourceCode: test trim ].
+	^ AICodeGenerationResult new
+		  methods: tests;
+		  issue: (answer partTaggedWith: 'issue');
+		  thinking: (answer partTaggedWith: 'thinking')
 ]
 
 { #category : 'private' }
@@ -301,6 +319,17 @@ AICodeAssistant >> systemPromptForTestGeneration [
 
 	^ 'You are helping a user create test cases for a Smalltalk system.
 Your task is to generate a test cases for the provided code.'
+]
+
+{ #category : 'private' }
+AICodeAssistant >> testFormatSpecification [
+
+	^ 'Do use testX for test selector and avoid including the class and >> before the selector.
+Your answer should be in correct Smalltalk in the following format:
+<bug>if you think there is a problem, describe it here</bug>
+<thinking>your rationale and explanation here, be brief</thinking>
+<test>pure Smalltalk code for the test case, without any ```marks</test>.
+If there is more than one test, enclose each of them between <test> and </test>.'
 ]
 
 { #category : 'context' }
@@ -361,64 +390,23 @@ AICodeAssistant >> writeCodeFromTests: aTestSuite [
 { #category : 'services' }
 AICodeAssistant >> writeTestForCode: aString [
 
-	| answer class |
 	self useCodeContext: aString.
-	answer := self sendPrompt: 'Write a unit test for the given code.
-Do use testX for test selector and avoid including the class and >> before the selector. 
-Your answer should be in correct Smalltalk in the following format:
-<bug>if you think there iss a problem, describe it here</bug>
-<thinking>your rational and explanation here, be brief</thinking>
-<test>pure Smalltalk code for the test case</test>'.
-	(answer partTaggedWith: 'test') ifNotNil: [ :test |
-		class := AISuggestedClass named: 'TestCase'.
-		^ AISuggestedMethod new
-			  suggestedClass: class;
-			  sourceCode: test trim ].
-	(answer partTaggedWith: 'bug') ifNotNil: [ :bug | ^ bug ].
-	^ (answer partTaggedWith: 'thinking') ifNil: [ answer content ]
+	^ self requestTestsWith: 'Write a unit test for the given code.'
 ]
 
 { #category : 'services' }
 AICodeAssistant >> writeTestForMethod: aCompiledMethod [
 
-	| answer class |
 	self useMethodContext: aCompiledMethod.
-	answer := self sendPrompt:
-		          'Write a unit test, only one unit test, for the given method.
-Do use testX for test selector and avoid including the class and >> before the selector. 
-Your answer should be in correct Smalltalk in the following format:
-<bug>if you think there is a problem, describe it here</bug>
-<thinking>your rational and explanation here, be brief</thinking>
-<test>pure Smalltalk code for the test case, without any ```marks</test>'.
-	(answer partTaggedWith: 'test') ifNotNil: [ :test |
-		class := AISuggestedClass named: 'TestCase'.
-		^ AISuggestedMethod new
-			  suggestedClass: class;
-			  sourceCode: test trim ].
-	(answer partTaggedWith: 'bug') ifNotNil: [ :bug | ^ bug ].
-	^ (answer partTaggedWith: 'thinking') ifNil: [ answer content ]
+	^ self requestTestsWith:
+		  'Write a unit test, only one unit test, for the given method.'
 ]
 
 { #category : 'services' }
 AICodeAssistant >> writeTestsForMethod: aCompiledMethod [
 
-	| answer class parts |
 	self useMethodContext: aCompiledMethod.
-	answer := self sendPrompt:
-		          'Write as many tests as you can for the given method.
-Do use testX for test selector and avoid including the class and >> before the selector.
-It is a good idea to generate one test cases for simple use cases, border conditions, different argument classes, etc.
-Your answer should be in correct Smalltalk in the following format:
-<bug>if you think there is a problem, describe it here</bug>
-<thinking>your rational and explanation here, be brief</thinking>
-Enclose each test between <test> and </test>, just pure Smalltalk code without any ``` marks.'.
-	parts := answer partsTaggedWith: 'test'.
-	parts notEmpty ifTrue: [
-		class := AISuggestedClass named: 'TestCase'.
-		^ parts collect: [ :test |
-			  AISuggestedMethod new
-				  suggestedClass: class;
-				  sourceCode: test trim ] ].
-	(answer partTaggedWith: 'bug') ifNotNil: [ :bug | ^ bug ].
-	^ (answer partTaggedWith: 'thinking') ifNil: [ answer content ]
+	^ self requestTestsWith:
+		  'Write as many tests as you can for the given method.
+It is a good idea to generate one test cases for simple use cases, border conditions, different argument classes, etc.'
 ]
