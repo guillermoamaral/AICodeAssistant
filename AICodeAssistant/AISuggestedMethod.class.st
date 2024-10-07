@@ -24,12 +24,31 @@ AISuggestedMethod >> canBeCompiled [
 	^ true
 ]
 
+{ #category : 'services' }
+AISuggestedMethod >> compile [
+
+	^ OpalCompiler new
+		  source: sourceCode;
+		  class: class realClass;
+		  compile
+]
+
+{ #category : 'services' }
+AISuggestedMethod >> install [
+
+	| method |
+	method := self compile.
+	method ifNotNil: [
+		class realClass addSelector: method selector withMethod: method ]
+]
+
 { #category : 'printing' }
 AISuggestedMethod >> printOn: aStream [
 
 	class ifNotNil: [
 		aStream
-			nextPutAll: class name; nextPutAll: ' >> #'].
+			nextPutAll: class name;
+			nextPutAll: ' >> #' ].
 	aStream nextPutAll: sourceCode
 ]
 

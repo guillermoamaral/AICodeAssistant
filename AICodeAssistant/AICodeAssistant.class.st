@@ -99,6 +99,27 @@ AICodeAssistant >> clearPromptContext [
 	promptContext := ''
 ]
 
+{ #category : 'private' }
+AICodeAssistant >> codeFormatSpecification [
+
+	^ 'You answer should be in correct Smalltalk in the following format:
+<issue>if you think there''''s a problem, describe it here</issue>
+<thinking>your rational and explanation here, be brief</thinking>
+<code>
+	<class>
+		<superclass>Smalltalk superclass name here</superclass>
+		<name>Smalltalk class name here</name>
+		<instanceVariables>Instance variables here, space-separated</instanceVariables>
+		<classVariables>Class variables here, space-separated</instanceVariables>
+		<method>Smalltalk method code here; avoid including the class and >> before the selector</method>
+		<method>Smalltalk method code here; avoid including the class and >> before the selector</method>
+		<method>Smalltalk method code here; avoid including the class and >> before the selector</method>
+		...
+	</class>
+</code>
+repeating <class> for each class you define, and <method> for every method you define in every class'''
+]
+
 { #category : 'initialization' }
 AICodeAssistant >> defaultInterface [
 
@@ -126,6 +147,24 @@ AICodeAssistant >> explainMethod: aCompiledMethod [
 	self useMethodContext: aCompiledMethod.
 	^ self sendPrompt:
 		  'Explain the given method'
+]
+
+{ #category : 'private' }
+AICodeAssistant >> extractClassesFrom: aString [
+
+	| parts name class |
+	parts := aString partsTaggedWith: 'class'.
+	parts isEmpty ifTrue: [ ^ nil ].
+	^ parts collect: [ :body |
+		  name := aString partTaggedWith: 'name' in: body.
+		  class := AISuggestedClass named: name.
+		  (aString partTaggedWith: 'superclass' in: body) ifNotNil: [ :n |
+			  class superclassName: n ].
+		  (aString partTaggedWith: 'instanceVariables' in: body) ifNotNil: [
+			  :vars | class instanceVariableNames: (vars substrings: ' ') ].
+		  (aString partsTaggedWith: 'method' in: body) do: [ :code |
+			  class addMethod: (AISuggestedMethod new sourceCode: code trim) ].
+		  class ]
 ]
 
 { #category : 'services' }
@@ -199,6 +238,17 @@ AICodeAssistant >> messages [
 { #category : 'accessing' }
 AICodeAssistant >> promptContext: aString [
 	promptContext := aString
+]
+
+{ #category : 'private' }
+AICodeAssistant >> requestCodeWith: aString [
+
+	| classes answer |
+	answer := self sendPrompt: aString , self codeFormatSpecification.
+	classes := self extractClassesFrom: answer.
+	classes ifNotNil: [ ^ classes ].
+	(answer partTaggedWith: 'issue') ifNotNil: [ :issue | ^ issue ].
+	^ (answer partTaggedWith: 'thinking') ifNil: [ answer content ]
 ]
 
 { #category : 'private' }
@@ -295,42 +345,17 @@ AICodeAssistant >> useTestsContext: aTestSuite [
 ]
 
 { #category : 'services' }
+AICodeAssistant >> writeCodeFromDescription: aString [
+
+	^ self requestCodeWith: aString
+]
+
+{ #category : 'services' }
 AICodeAssistant >> writeCodeFromTests: aTestSuite [
 
-	| answer parts name class |
 	self useTestsContext: aTestSuite.
-	answer := self sendPrompt:
-		          'Provide Smalltalk code that passes given tests.
-You answer should be in correct Smalltalk in the following format:
-<issue>if you think there''''s a problem, describe it here</issue>
-<thinking>your rational and explanation here, be brief</thinking>
-<code>
-	<class>
-		<superclass>Smalltalk superclass name here</superclass>
-		<name>Smalltalk class name here</name>
-		<instanceVariables>Instance variables here, space-separated</instanceVariables>
-		<classVariables>Class variables here, space-separated</instanceVariables>
-		<method>Smalltalk method code here; avoid including the class and >> before the selector</method>
-		<method>Smalltalk method code here; avoid including the class and >> before the selector</method>
-		<method>Smalltalk method code here; avoid including the class and >> before the selector</method>
-		...
-	</class>
-</code>
-repeating <class> for each class you define, and <method> for every method you define in every class'''.
-	parts := answer partsTaggedWith: 'class'.
-	parts notEmpty ifTrue: [
-		^ parts collect: [ :body |
-			  name := answer partTaggedWith: 'name' in: body.
-			  class := AISuggestedClass named: name.
-			  (answer partTaggedWith: 'superclass' in: body) ifNotNil: [ :n |
-				  class superclassName: n ].
-			  (answer partTaggedWith: 'instanceVariables' in: body) ifNotNil: [
-				  :vars | class instanceVariableNames: (vars substrings: ' ') ].
-			  (answer partsTaggedWith: 'method' in: body) do: [ :code |
-				  class addMethod: (AISuggestedMethod new sourceCode: code trim) ].
-			  class ] ].
-	(answer partTaggedWith: 'issue') ifNotNil: [ :issue | ^ issue ].
-	^ (answer partTaggedWith: 'thinking') ifNil: [ answer content ]
+	^ self requestCodeWith:
+		  'Provide Smalltalk code that passes given tests.'
 ]
 
 { #category : 'services' }
