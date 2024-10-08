@@ -128,6 +128,56 @@ AITestGenerationBenchmark >> recoveryPlot [
 ]
 
 { #category : 'results' }
+AITestGenerationBenchmark >> report [
+
+	| statuses percentages |
+	statuses := AITestGenerationBenchmarkResult availableStatuses.
+	percentages := self statusPercentages.
+	^ String streamContents: [ :strm |
+		  strm
+			  nextPutAll: 'Test generation benchmark report';
+			  cr;
+			  nextPutAll: 'Overall status percentages:'.
+		  statuses do: [ :s |
+			  strm
+				  crtab;
+				  nextPutAll: s;
+				  nextPutAll: ': ';
+				  nextPutAll:
+					  ((percentages at: s ifAbsent: [ 0 ]) * 100) rounded asString;
+				  nextPut: $% ] ]
+]
+
+{ #category : 'results' }
+AITestGenerationBenchmark >> reportByMethod [
+
+	| statuses percentages |
+	statuses := AITestGenerationBenchmarkResult availableStatuses.
+	percentages := self statusPercentagesByMethod.
+	^ String streamContents: [ :strm |
+		  strm
+			  nextPutAll: 'Detailed status percentages by tested method';
+			  cr.
+		  targetMethods do: [ :m |
+			  strm
+				  cr;
+				  nextPutAll: m methodClass name;
+				  nextPutAll: ' >> #';
+				  nextPutAll: m selector;
+				  cr.
+			  statuses do: [ :s |
+				  strm
+					  crtab;
+					  nextPutAll: s;
+					  nextPutAll: ': ';
+					  nextPutAll:
+						  (((percentages at: m) at: s ifAbsent: [ 0 ]) * 100) rounded
+							  asString;
+					  nextPut: $% ].
+			  strm cr ] ]
+]
+
+{ #category : 'results' }
 AITestGenerationBenchmark >> reportOf: aCompiledMethod [
 
 	| separation index conversation |
