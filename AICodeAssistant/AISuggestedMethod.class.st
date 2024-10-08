@@ -17,11 +17,7 @@ Class {
 AISuggestedMethod >> canBeCompiled [
 
 	(class isNil or: [ class exists ]) ifFalse: [ ^ false ].
-	[
-	Smalltalk compilerClass new
-		source: sourceCode;
-		class: class realClass;
-		compile ]
+	[ AICodeAssistant compile: sourceCode in: class realClass ]
 		on: Error
 		do: [ ^ false ].
 	^ true
@@ -30,10 +26,7 @@ AISuggestedMethod >> canBeCompiled [
 { #category : 'services' }
 AISuggestedMethod >> compile [
 
-	^ Smalltalk compilerClass new
-		  source: sourceCode;
-		  class: self realClass;
-		  compile
+	^ AICodeAssistant compile: sourceCode in: class realClass
 ]
 
 { #category : 'services' }

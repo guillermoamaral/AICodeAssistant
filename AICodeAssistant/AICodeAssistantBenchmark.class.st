@@ -95,8 +95,5 @@ AICodeAssistantBenchmark >> results [
 { #category : 'private' }
 AICodeAssistantBenchmark >> tryToCompile: aString in: aClass [
 
-	Smalltalk compilerClass new
-		source: aString;
-		class: aClass;
-		compile
+	AICodeAssistant compile: aString in: aClass
 ]

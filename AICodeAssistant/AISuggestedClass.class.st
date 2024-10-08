@@ -38,7 +38,7 @@ AISuggestedClass >> canBeInstalled [
 { #category : 'accessing' }
 AISuggestedClass >> classVariableNames [
 
-	^ classVariableNames
+	^ classVariableNames ifNil: [ #(  ) ]
 ]
 
 { #category : 'accessing' }
@@ -79,7 +79,7 @@ AISuggestedClass >> install [
 { #category : 'accessing' }
 AISuggestedClass >> instanceVariableNames [
 
-	^ instanceVariableNames
+	^ (instanceVariableNames ifNil: [#()])
 ]
 
 { #category : 'accessing' }
@@ -121,11 +121,11 @@ AISuggestedClass >> printOn: aStream [
 		nextPutAll: 'superclass: ';
 		nextPutAll: (superclassName ifNil: [ '' ]);
 		nextPutAll: 'instanceVariableNames: '.
-	instanceVariableNames printOn: aStream.
+	self instanceVariableNames printOn: aStream.
 	aStream
 		crtab;
 		nextPutAll: 'classVariableNames: '.
-	classVariableNames printOn: aStream 
+	self classVariableNames printOn: aStream
 ]
 
 { #category : 'accessing' }
