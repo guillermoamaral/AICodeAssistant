@@ -102,7 +102,7 @@ AICodeGenerationBenchmark >> tryCode: anAICodeGenerationResult with: aTestSuite 
 					method install ] ].
 	suiteResult := aTestSuite run.
 	suiteResult hasErrors ifTrue: [
-		[ aTestSuite tests anyOne runCase ]
+		[ aTestSuite tests first runCase ]
 			on: Exception
 			do: [ :e | exception := e ] ].
 	suiteResult hasErrors ifTrue: [

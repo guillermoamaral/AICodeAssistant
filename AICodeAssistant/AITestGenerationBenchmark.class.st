@@ -288,7 +288,7 @@ AITestGenerationBenchmark >> tryTest: anAISuggestedMethod [
 	suite := AIGeneratedTest buildSuiteFromMethods: { selector }.
 	testResult := suite run.
 	testResult hasPassed ifTrue: [ ^ result bePassed ].
-	[ suite tests anyOne runCase ]
+	[ suite tests first runCase ]
 		on: Exception
 		do: [ :e | exception := e ].
 	testResult hasErrors ifTrue: [
@@ -305,5 +305,5 @@ AITestGenerationBenchmark >> tryToSolve: anAITestGenerationBenchmarkResult [
 	assistant clearPromptContext.
 	tests := (assistant requestTestsWith:
 		          anAITestGenerationBenchmarkResult description) methods.
-	^ self tryTest: (tests notEmpty ifTrue: [ tests anyOne ])
+	^ self tryTest: (tests notEmpty ifTrue: [ tests first ])
 ]

@@ -79,7 +79,7 @@ AICodeAssistantMessage >> partTaggedWith: tag [
 
 	| parts |
 	parts := self partsTaggedWith: tag.
-	^ parts notEmpty ifTrue: [ parts anyOne ]
+	^ parts notEmpty ifTrue: [ parts first ]
 ]
 
 { #category : 'services' }
@@ -87,7 +87,7 @@ AICodeAssistantMessage >> partTaggedWith: tag in: aString [
 
 	| parts |
 	parts := self partsTaggedWith: tag in: aString.
-	^ parts notEmpty ifTrue: [ parts anyOne ]
+	^ parts notEmpty ifTrue: [ parts first ]
 ]
 
 { #category : 'services' }
