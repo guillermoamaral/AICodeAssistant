@@ -22,7 +22,7 @@ LlamaInterface >> defaultModel [
 LlamaInterface >> sendMessages: aCollection [
 
 	| body answer |
-	body := NeoJSONObject new.
+	body := self newJsonObject.
 	body
 		at: 'model' put: model;
 		at: 'messages' put: aCollection.

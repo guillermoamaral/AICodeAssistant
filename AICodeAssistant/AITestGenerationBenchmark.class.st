@@ -220,13 +220,14 @@ AITestGenerationBenchmark >> statusPercentagesByMethod [
 { #category : 'results' }
 AITestGenerationBenchmark >> statusPercentagesByMethodPlot [
 	"This plot shows how generated tests, grouped by target method,
-	distribute among invalid, passed, failed and error categories."
+	distribute among invalid, passed, failed and error categories.
+	Ugly code to ease migration to other dialects."
 
 	| percentages data cluster color plot |
 	percentages := self statusPercentagesByMethod.
 	AITestGenerationBenchmarkResult availableStatuses do: [ :s |
 		data := targetMethods collect: [ :m | (percentages at: m) at: s ].
-		cluster := RSBarPlotNew new data: data.
+		cluster := (Smalltalk at: #RSBarPlotNew) new data: data.
 		color := self colorForStatus: s.
 		cluster color: color.
 		plot := plot ifNil: [ cluster ] ifNotNil: [ plot + cluster ] ].
@@ -242,12 +243,13 @@ AITestGenerationBenchmark >> statusPercentagesByMethodPlot [
 { #category : 'results' }
 AITestGenerationBenchmark >> statusPercentagesPlot [
 	"This plot shows how generated tests distribute among invalid,
-	passed, failed and error categories."
+	passed, failed and error categories.
+	Ugly code to ease migration to other dialects."
 
 	| percentages cluster color plot |
 	percentages := self statusPercentages.
 	percentages keysAndValuesDo: [ :s :p |
-		cluster := RSBarPlotNew new data: { p }.
+		cluster := (Smalltalk at: #RSBarPlotNew) new data: { p }.
 		color := self colorForStatus: s.
 		cluster color: color.
 		plot := plot ifNil: [ cluster ] ifNotNil: [ plot + cluster ] ].

@@ -40,10 +40,11 @@ AICodeAssistantMessage class >> userPrompt: aString [
 
 { #category : 'converting' }
 AICodeAssistantMessage >> asJsonObject [
-	^NeoJSONObject new
-		at: 'role' put: role;
-		at: 'content' put: content;
-		yourself
+
+	^ self newJsonObject
+		  at: 'role' put: role;
+		  at: 'content' put: content;
+		  yourself
 ]
 
 { #category : 'accessing' }
@@ -64,6 +65,13 @@ AICodeAssistantMessage >> initialize [
 	super initialize.
 	role := 'user'.
 	tags := OrderedCollection new
+]
+
+{ #category : 'private' }
+AICodeAssistantMessage >> newJsonObject [
+	"Ugly code to ease migration to other dialects."
+
+	^ (Smalltalk at: #NeoJSONObject) new
 ]
 
 { #category : 'services' }

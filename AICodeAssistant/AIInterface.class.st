@@ -50,10 +50,10 @@ AIInterface >> initialize [
 
 { #category : 'initialization' }
 AIInterface >> initializeClient [
+	"Ugly code to ease migration to other dialects."
 
-	client := ZnClient new.
-	client
-		forJsonREST
+	client := (Smalltalk at: #ZnClient) new.
+	client forJsonREST
 ]
 
 { #category : 'accessing' }
@@ -92,6 +92,13 @@ AIInterface >> name [
 	^ self class name withoutSuffix: 'Interface'
 ]
 
+{ #category : 'private' }
+AIInterface >> newJsonObject [
+	"Ugly code to ease migration to other dialects."
+	
+	^ (Smalltalk at: #NeoJSONObject) new
+]
+
 { #category : 'requests' }
 AIInterface >> post: uri with: json [
 
@@ -107,7 +114,7 @@ AIInterface >> post: uri with: json [
 AIInterface >> sendMessages: aCollection [
 
 	| body answer |
-	body := NeoJSONObject new.
+	body := self newJsonObject.
 	body
 		at: 'model' put: model;
 		at: 'messages' put: aCollection;
@@ -124,12 +131,13 @@ AIInterface >> sendPrompt: text [
 
 { #category : 'requests' }
 AIInterface >> sendPrompt: text as: role [
+
 	| message |
-	message := NeoJSONObject new.
+	message := self newJsonObject.
 	message
-		at: 'role' put: (role ifNil: ['user']);
+		at: 'role' put: (role ifNil: [ 'user' ]);
 		at: 'content' put: text.
-	^self sendMessages: {message}
+	^ self sendMessages: { message }
 ]
 
 { #category : 'accessing' }
