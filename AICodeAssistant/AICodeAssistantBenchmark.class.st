@@ -33,6 +33,29 @@ AICodeAssistantBenchmark >> assistant: anAICodeAssistant [
 	assistant := anAICodeAssistant
 ]
 
+{ #category : 'private' }
+AICodeAssistantBenchmark >> describeError: anError [
+
+	^ String streamContents: [ :strm |
+		  anError == MessageNotUnderstood
+			  ifTrue: [
+				  strm
+					  nextPutAll: 'a MessageNotUnderstood as the message ';
+					  nextPutAll: anError message selector;
+					  nextPutAll: ' was not understood by an instance of ';
+					  nextPutAll: anError receiver class name;
+					  nextPutAll:
+						  '. These are the messages the object actually understands and could be used instead: '.
+				  anError receiver class selectors
+					  do: [ :s | strm nextPutAll: s ]
+					  separatedBy: [ strm nextPut: $, ] ]
+			  ifFalse: [
+				  strm
+					  nextPutAll: 'an error saying: "';
+					  nextPutAll: anError description;
+					  nextPut: $" ] ]
+]
+
 { #category : 'intialization' }
 AICodeAssistantBenchmark >> initialize [
 

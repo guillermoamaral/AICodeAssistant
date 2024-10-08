@@ -16,53 +16,42 @@ Class {
 { #category : 'private' }
 AITestGenerationBenchmark >> describeCompilationError: anError in: aString [
 
+	| mention |
 	^ String streamContents: [ :strm |
+		  mention := self mentionTestCode: aString.
 		  strm
-			  nextPutAll: 'This test you have provided <test>';
-			  nextPutAll: aString;
-			  nextPutAll: '</test> could not be compiled due to: ';
-			  nextPutAll: anError description ]
+			  nextPutAll: mention;
+			  nextPutAll: ' could not be compiled due to this error: "';
+			  nextPutAll: anError description;
+			  nextPut: $" ]
 ]
 
 { #category : 'private' }
 AITestGenerationBenchmark >> describeTestError: anError in: aString [
 
+	| mention description |
 	^ String streamContents: [ :strm |
+		  mention := self mentionTestCode: aString.
+		  description := self describeError: anError.
 		  strm
-			  nextPutAll: 'This test you have provided <test>';
-			  nextPutAll: aString;
-			  nextPutAll: '</test> resulted in '.
-		  anError == MessageNotUnderstood
-			  ifTrue: [
-				  strm
-					  nextPutAll: 'a MessageNotUnderstood exception since ';
-					  nextPutAll: anError message selector;
-					  nextPutAll: ' is not understood by an instance of ';
-					  nextPutAll: anError receiver class name;
-					  nextPutAll:
-						  '. Provide a version based on the the following messages that object understands: '.
-				  anError receiver class selectors
-					  do: [ :s | strm nextPutAll: s ]
-					  separatedBy: [ strm nextPut: $, ].
-				  strm cr ]
-			  ifFalse: [
-				  strm
-					  nextPutAll: 'the following error: ';
-					  nextPutAll: anError description;
-					  nextPutAll:
-						  '. Provide a version that does not fall into this exception.';
-					  cr ] ]
+			  nextPutAll: mention;
+			  nextPutAll: ' resulted in ';
+			  nextPutAll: description;
+			  cr;
+			  nextPutAll:
+				  'Provide a version that does not fall into this error.' ]
 ]
 
 { #category : 'private' }
 AITestGenerationBenchmark >> describeTestFailure: aTestFailure in: aString [
 	"We need to provide better description based on the concrete assertion that triggered the failure..."
 
+	| mention |
 	^ String streamContents: [ :strm |
+		  mention := self mentionTestCode: aString.
 		  strm
-			  nextPutAll: 'This test you have provided <test>';
-			  nextPutAll: aString;
-			  nextPutAll: '</test> resulted in the following failure: ';
+			  nextPutAll: mention;
+			  nextPutAll: ' resulted in the following failure: ';
 			  cr;
 			  nextPutAll: aTestFailure description;
 			  nextPutAll: '. Provide a version that does not fail.' ]
@@ -92,6 +81,16 @@ AITestGenerationBenchmark >> initialize [
 
 	super initialize.
 	assistant beTestsGenerator
+]
+
+{ #category : 'private' }
+AITestGenerationBenchmark >> mentionTestCode: aString [
+self halt.
+	^ String streamContents: [ :strm |
+		  strm
+			  nextPutAll: 'The suggested test <test>';
+			  nextPutAll: aString;
+			  nextPutAll: '</test>' ]
 ]
 
 { #category : 'running' }
@@ -162,23 +161,22 @@ AITestGenerationBenchmark >> tryTest: anAISuggestedMethod [
 	selector := AIGeneratedTest compile: code.
 	suite := AIGeneratedTest buildSuiteFromMethods: { selector }.
 	testResult := suite run.
-	(testResult hasErrors or: [ testResult hasFailures ]) ifTrue: [
-		[ suite tests anyOne runCase ]
-			on: Exception
-			do: [ :e | exception := e ] ].
+	testResult hasPassed ifTrue: [ ^ result bePassed ].
+	[ suite tests anyOne runCase ]
+		on: Exception
+		do: [ :e | exception := e ].
 	testResult hasErrors ifTrue: [
 		description := self describeTestError: exception in: code.
 		^ result beError: description ].
-	testResult hasFailures ifTrue: [
-		description := self describeTestFailure: exception in: code.
-		^ result beFailed: description ].
-	^ result bePassed
+	description := self describeTestFailure: exception in: code.
+	^ result beFailed: description
 ]
 
 { #category : 'private' }
 AITestGenerationBenchmark >> tryToSolve: anAITestGenerationBenchmarkResult [
 
 	| tests |
+	assistant clearPromptContext.
 	tests := (assistant requestTestsWith:
 		          anAITestGenerationBenchmarkResult description) methods.
 	^ self tryTest: (tests notEmpty ifTrue: [ tests anyOne ])

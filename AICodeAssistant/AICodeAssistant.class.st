@@ -348,9 +348,9 @@ AICodeAssistant >> useCodeContext: aString [
 	promptContext := String streamContents: [ :strm |
 		                 strm
 			                 nextPutAll:
-				                 'Consider a the follwing Smalltalk code:';
+				                 'Consider the follwing Smalltalk code:';
 			                 cr;
-			                 nextPutAll: aString ] 
+			                 nextPutAll: aString ]
 ]
 
 { #category : 'context' }
@@ -359,7 +359,7 @@ AICodeAssistant >> useMethodContext: aCompiledMethod [
 	promptContext := String streamContents: [ :strm |
 		                 strm
 			                 nextPutAll:
-				                 'Consider a the follwing Smalltalk method in class ';
+				                 'Consider the follwing Smalltalk method in class ';
 			                 nextPutAll: aCompiledMethod classBinding name;
 			                 cr;
 			                 nextPutAll: aCompiledMethod sourceCode ]

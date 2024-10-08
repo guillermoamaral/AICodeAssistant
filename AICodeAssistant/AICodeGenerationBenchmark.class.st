@@ -57,6 +57,16 @@ AICodeGenerationBenchmark >> initialize [
 	assistant beCodeFromTestsGenerator
 ]
 
+{ #category : 'private' }
+AICodeGenerationBenchmark >> mentionSuggestedMethod: anAISuggestedMethod [
+
+	^ String streamContents: [ :strm |
+		  strm
+			  nextPutAll: 'The suggested method <method>';
+			  nextPutAll: anAISuggestedMethod sourceCode;
+			  nextPutAll: '</method>']
+]
+
 { #category : 'running' }
 AICodeGenerationBenchmark >> run [
 	"
