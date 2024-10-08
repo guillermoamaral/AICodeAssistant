@@ -6,12 +6,20 @@ Class {
 	#superclass : 'Object',
 	#instVars : [
 		'assistant',
-		'results'
+		'results',
+		'numIterations',
+		'maxAttempts'
 	],
 	#category : 'AICodeAssistant-Benchmarks',
 	#package : 'AICodeAssistant',
 	#tag : 'Benchmarks'
 }
+
+{ #category : 'accessing' }
+AICodeAssistantBenchmark >> addResult: anAICodeAssistantBenchmarkResult [
+
+	results add: anAICodeAssistantBenchmarkResult
+]
 
 { #category : 'accessing' }
 AICodeAssistantBenchmark >> assistant [
@@ -30,11 +38,42 @@ AICodeAssistantBenchmark >> initialize [
 
 	super initialize.
 	assistant := AICodeAssistant new.
-	results := OrderedCollection new
+	results := OrderedCollection new.
+	numIterations := 5.
+	maxAttempts := 2
+]
+
+{ #category : 'logging' }
+AICodeAssistantBenchmark >> log: aString [
+
+	Transcript
+		show: aString;
+		cr
+]
+
+{ #category : 'parameters' }
+AICodeAssistantBenchmark >> maxAttempts: aNumber [
+
+	maxAttempts := aNumber
+]
+
+{ #category : 'parameters' }
+AICodeAssistantBenchmark >> numIterations: aNumber [
+
+	numIterations := aNumber
 ]
 
 { #category : 'accessing' }
 AICodeAssistantBenchmark >> results [
 
 	^ results
+]
+
+{ #category : 'private' }
+AICodeAssistantBenchmark >> tryToCompile: aString in: aClass [
+
+	OpalCompiler new
+		source: aString;
+		class: aClass;
+		compile
 ]

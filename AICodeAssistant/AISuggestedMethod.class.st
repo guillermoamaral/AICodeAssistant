@@ -32,7 +32,7 @@ AISuggestedMethod >> compile [
 
 	^ OpalCompiler new
 		  source: sourceCode;
-		  class: class realClass;
+		  class: self realClass;
 		  compile
 ]
 
@@ -42,7 +42,7 @@ AISuggestedMethod >> install [
 	| method |
 	method := self compile.
 	method ifNotNil: [
-		class realClass addSelector: method selector withMethod: method ]
+		self realClass addSelector: method selector withMethod: method ]
 ]
 
 { #category : 'printing' }
@@ -53,6 +53,12 @@ AISuggestedMethod >> printOn: aStream [
 			nextPutAll: class name;
 			nextPutAll: ' >> #' ].
 	aStream nextPutAll: sourceCode
+]
+
+{ #category : 'accessing' }
+AISuggestedMethod >> realClass [
+
+	^class ifNotNil: [ class realClass ]
 ]
 
 { #category : 'accessing' }

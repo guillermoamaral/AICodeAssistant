@@ -151,21 +151,35 @@ AICodeAssistant >> explainMethod: aCompiledMethod [
 ]
 
 { #category : 'private' }
-AICodeAssistant >> extractClassesFrom: aString [
+AICodeAssistant >> extractClassesFrom: anAICodeAssistantMessage [
 
 	| parts name class |
-	parts := aString partsTaggedWith: 'class'.
+	parts := anAICodeAssistantMessage partsTaggedWith: 'class'.
 	parts isEmpty ifTrue: [ ^ nil ].
 	^ parts collect: [ :body |
-		  name := aString partTaggedWith: 'name' in: body.
+		  name := anAICodeAssistantMessage partTaggedWith: 'name' in: body.
 		  class := AISuggestedClass named: name.
-		  (aString partTaggedWith: 'superclass' in: body) ifNotNil: [ :n |
-			  class superclassName: n ].
-		  (aString partTaggedWith: 'instanceVariables' in: body) ifNotNil: [
-			  :vars | class instanceVariableNames: (vars substrings: ' ') ].
-		  (aString partsTaggedWith: 'method' in: body) do: [ :code |
+		  (anAICodeAssistantMessage partTaggedWith: 'superclass' in: body)
+			  ifNotNil: [ :n | class superclassName: n ].
+		  (anAICodeAssistantMessage
+			   partTaggedWith: 'instanceVariables'
+			   in: body) ifNotNil: [ :vars |
+			  class instanceVariableNames: (vars substrings: ' ') ].
+		  (anAICodeAssistantMessage partsTaggedWith: 'method' in: body) do: [
+			  :code |
 			  class addMethod: (AISuggestedMethod new sourceCode: code trim) ].
 		  class ]
+]
+
+{ #category : 'private' }
+AICodeAssistant >> extractTestsFrom: anAICodeAssistantMessage [
+
+	| class |
+	class := AISuggestedClass named: 'AIGeneratedTest'.
+	^ (anAICodeAssistantMessage partsTaggedWith: 'test') collect: [ :test |
+		  AISuggestedMethod new
+			  suggestedClass: class;
+			  sourceCode: test trim ]
 ]
 
 { #category : 'services' }
@@ -256,13 +270,9 @@ AICodeAssistant >> requestCodeWith: aString [
 { #category : 'private' }
 AICodeAssistant >> requestTestsWith: aString [
 
-	| answer class tests |
+	| answer tests |
 	answer := self sendPrompt: aString , self testFormatSpecification.
-	class := AISuggestedClass named: 'AIGeneratedTest'.
-	tests := (answer partsTaggedWith: 'test') collect: [ :test |
-		         AISuggestedMethod new
-			         suggestedClass: class;
-			         sourceCode: test trim ].
+	tests := self extractTestsFrom: answer.
 	^ AICodeGenerationResult new
 		  methods: tests;
 		  issue: (answer partTaggedWith: 'issue');
