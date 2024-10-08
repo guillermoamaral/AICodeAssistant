@@ -131,6 +131,15 @@ AICodeAssistant >> codeFormatSpecification [
 repeating <class> for each class you define, and <method> for every method you define in every class'''
 ]
 
+{ #category : 'services' }
+AICodeAssistant >> deduceTypeOfExpression: aString [
+
+	| answer |
+	self useCodeContext: aString.
+	answer := self sendPrompt: 'What is the type of such expression?'.
+	^ answer content
+]
+
 { #category : 'initialization' }
 AICodeAssistant >> defaultInterface [
 
