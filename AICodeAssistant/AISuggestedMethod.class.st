@@ -18,7 +18,7 @@ AISuggestedMethod >> canBeCompiled [
 
 	(class isNil or: [ class exists ]) ifFalse: [ ^ false ].
 	[
-	OpalCompiler new
+	Smalltalk compilerClass new
 		source: sourceCode;
 		class: class realClass;
 		compile ]
@@ -30,7 +30,7 @@ AISuggestedMethod >> canBeCompiled [
 { #category : 'services' }
 AISuggestedMethod >> compile [
 
-	^ OpalCompiler new
+	^ Smalltalk compilerClass new
 		  source: sourceCode;
 		  class: self realClass;
 		  compile

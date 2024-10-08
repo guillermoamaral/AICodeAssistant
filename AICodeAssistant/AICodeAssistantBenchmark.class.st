@@ -95,7 +95,7 @@ AICodeAssistantBenchmark >> results [
 { #category : 'private' }
 AICodeAssistantBenchmark >> tryToCompile: aString in: aClass [
 
-	OpalCompiler new
+	Smalltalk compilerClass new
 		source: aString;
 		class: aClass;
 		compile
