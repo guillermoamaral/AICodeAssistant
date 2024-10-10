@@ -54,6 +54,12 @@ AISuggestedMethod >> realClass [
 	^class ifNotNil: [ class realClass ]
 ]
 
+{ #category : 'inquiries' }
+AISuggestedMethod >> selector [
+
+	^ AICodeAssistant parseSelector: sourceCode 
+]
+
 { #category : 'accessing' }
 AISuggestedMethod >> sourceCode [
 

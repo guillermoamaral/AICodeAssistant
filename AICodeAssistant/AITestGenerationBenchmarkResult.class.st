@@ -35,18 +35,6 @@ AITestGenerationBenchmarkResult >> initialize [
 ]
 
 { #category : 'accessing' }
-AITestGenerationBenchmarkResult >> testCode [
-
-	^ code
-]
-
-{ #category : 'accessing' }
-AITestGenerationBenchmarkResult >> testCode: aString [
-
-	code := aString
-]
-
-{ #category : 'accessing' }
 AITestGenerationBenchmarkResult >> testedMethod [
 
 	^ testedMethod

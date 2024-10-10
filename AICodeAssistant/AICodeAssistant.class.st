@@ -23,13 +23,21 @@ Class {
 
 { #category : 'services' }
 AICodeAssistant class >> compile: aString in: aClass [
-	"This service is hihgly dependent on the dialect so it is placed here to be accessible from the framework
-	(and ease the porting of the framework to other dialects)"
+	"This service is hihgly dependent on the dialect so it is placed here
+	to be accessible from the framework (and ease the porting of the framework to other dialects)"
 
 	^ Smalltalk compilerClass new
 		  source: aString;
 		  class: aClass;
 		  compile
+]
+
+{ #category : 'services' }
+AICodeAssistant class >> parseSelector: aString [
+	"This service is hihgly dependent on the dialect so it is placed here
+	to be accessible from the framework (and ease the porting of the framework to other dialects)"
+
+	^ Smalltalk compilerClass new parseSelector: aString
 ]
 
 { #category : 'context' }

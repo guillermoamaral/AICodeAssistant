@@ -77,15 +77,21 @@ AICodeGenerationBenchmark >> run [
 		targetSuites do: [ :suite | self generateCodeFor: suite ] ]
 ]
 
+{ #category : 'parameters' }
+AICodeGenerationBenchmark >> targetSuites: aCollection [
+
+	targetSuites := aCollection
+]
+
 { #category : 'private' }
 AICodeGenerationBenchmark >> tryCode: anAICodeGenerationResult with: aTestSuite [
 
-	| result suiteResult description exception |
+	| result suiteResult description |
 	self log: 'Trying generated code...'.
 	result := AICodeGenerationBenchmarkResult new.
 	result
 		conversation: assistant messages copy;
-		code: anAICodeGenerationResult.
+		code: anAICodeGenerationResult; testSuite: aTestSuite.
 	anAICodeGenerationResult classes
 		do: [ :class |
 			class canBeInstalled ifFalse: [
@@ -94,26 +100,41 @@ AICodeGenerationBenchmark >> tryCode: anAICodeGenerationResult with: aTestSuite 
 			class install ];
 		do: [ :class |
 			class methods do: [ :method |
-					[ self tryToCompile: method sourceCode in: method realClass ]
+					[ method install ]
 						on: Error
 						do: [ :e |
 							description := self describeCompilationError: e in: method.
 							^ result beInvalid: description ].
 					method install ] ].
 	suiteResult := aTestSuite run.
-	suiteResult hasErrors ifTrue: [
-		[ aTestSuite tests first runCase ]
-			on: Exception
-			do: [ :e | exception := e ] ].
-	suiteResult hasErrors ifTrue: [
-		^ result beError: 'Tests raised errors' ].
+	suiteResult hasPassed ifTrue: [ ^ result bePassed ].
 	suiteResult hasFailures ifTrue: [
 		description := String streamContents: [ :strm |
-			               suiteResult failures do: [ :f |
+			               strm nextPutAll:
+				               'From the provided tests the following failed: '.
+			               suiteResult failures do: [ :t |
 				               strm
 					               cr;
-					               crtab.
-				               f printOn: strm ] ].
-		^ result beFailed: 'The following tests have failed: ' ].
-	^ result bePassed
+					               nextPutAll: t selector ] ].
+		^ result beFailed: description ].
+	description := String streamContents: [ :strm |
+		               strm nextPutAll:
+			               'From the provided tests the following failed: '.
+		               suiteResult errors do: [ :t |
+			               strm
+				               cr;
+				               nextPutAll: t selector ] ].
+	^ result beError: description
+]
+
+{ #category : 'private' }
+AICodeGenerationBenchmark >> tryToSolve: anAICodeGenerationBenchmarkResult [
+
+	| code |
+	assistant clearPromptContext.
+	code := assistant requestCodeWith:
+		        anAICodeGenerationBenchmarkResult description.
+	^ self
+		  tryCode: code
+		  with: anAICodeGenerationBenchmarkResult testSuite
 ]

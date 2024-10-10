@@ -71,6 +71,50 @@ AITestGenerationBenchmark >> describeTestFailure: aTestFailure in: aString [
 			  nextPutAll: '. Provide a version that does not fail.' ]
 ]
 
+{ #category : 'results' }
+AITestGenerationBenchmark >> detailReportOfMethod: aCompiledMethod [
+
+	| separation index conversation |
+	separation := '===================================================================================================='.
+	^ String streamContents: [ :strm |
+		  strm
+			  nextPutAll: 'Conversations around method ';
+			  nextPutAll: aCompiledMethod methodClass name;
+			  nextPutAll: ' >> #';
+			  nextPutAll: aCompiledMethod selector;
+			  cr;
+			  nextPutAll:
+				  'To reduce the length of the resport, system prompt and first user prompt are only shown in the first conversation.'.
+		  index := 1.
+		  results
+			  select: [ :r | r testedMethod = aCompiledMethod ]
+			  thenDo: [ :r |
+				  strm
+					  cr;
+					  cr;
+					  nextPutAll: separation;
+					  cr;
+					  nextPutAll: 'Conversation #';
+					  nextPutAll: index asString;
+					  cr;
+					  nextPutAll: separation.
+				  conversation := r conversation.
+				  index > 1 ifTrue: [
+					  conversation := conversation copyFrom: 3 to: conversation size ].
+				  conversation do: [ :m |
+					  strm cr.
+					  m printOn: strm ].
+				  strm
+					  cr;
+					  nextPutAll: 'Result of conversation #';
+					  nextPutAll: index asString;
+					  nextPutAll: ': ';
+					  nextPutAll: r status;
+					  cr;
+					  nextPutAll: separation.
+				  index := index + 1 ] ]
+]
+
 { #category : 'private' }
 AITestGenerationBenchmark >> generateTestsFor: aCompiledMethod [
 
@@ -130,95 +174,65 @@ AITestGenerationBenchmark >> recoveryPlot [
 { #category : 'results' }
 AITestGenerationBenchmark >> report [
 
-	| statuses percentages |
+	| statuses counts n c p |
 	statuses := AITestGenerationBenchmarkResult availableStatuses.
-	percentages := self statusPercentages.
+	counts := self statusCounts.
+	n := results size.
 	^ String streamContents: [ :strm |
 		  strm
 			  nextPutAll: 'Test generation benchmark report';
 			  cr;
-			  nextPutAll: 'Overall status percentages:'.
+			  cr;
+			  nextPutAll: 'Tests generated: ';
+			  nextPutAll: n asString;
+			  cr;
+			  nextPutAll: 'Result status distribution:'.
 		  statuses do: [ :s |
+			  c := counts at: s ifAbsent: [ 0 ].
+			  p := (c / n * 100.0) rounded.
 			  strm
 				  crtab;
 				  nextPutAll: s;
 				  nextPutAll: ': ';
-				  nextPutAll:
-					  ((percentages at: s ifAbsent: [ 0 ]) * 100) rounded asString;
-				  nextPut: $% ] ]
+				  nextPutAll: c asString;
+				  nextPutAll: ' (';
+				  nextPutAll: p asString;
+				  nextPutAll: '%)' ] ]
 ]
 
 { #category : 'results' }
 AITestGenerationBenchmark >> reportByMethod [
 
-	| statuses percentages |
+	| statuses counts c n p |
 	statuses := AITestGenerationBenchmarkResult availableStatuses.
-	percentages := self statusPercentagesByMethod.
+	counts := self statusCountByMethod.
 	^ String streamContents: [ :strm |
 		  strm
-			  nextPutAll: 'Detailed status percentages by tested method';
+			  nextPutAll: 'Detailed status by tested method';
 			  cr.
 		  targetMethods do: [ :m |
+			  n := (counts at: m) at: #total.
 			  strm
 				  cr;
 				  nextPutAll: m methodClass name;
 				  nextPutAll: ' >> #';
 				  nextPutAll: m selector;
-				  cr.
+				  cr;
+				  nextPutAll: 'Tests generated: ';
+				  nextPutAll: n asString.
 			  statuses do: [ :s |
+				  c := (counts at: m) at: s ifAbsent: [ 0 ].
+				  p := (c / n * 100.0) rounded.
 				  strm
 					  crtab;
 					  nextPutAll: s;
 					  nextPutAll: ': ';
-					  nextPutAll:
-						  (((percentages at: m) at: s ifAbsent: [ 0 ]) * 100) rounded
-							  asString;
-					  nextPut: $% ].
-			  strm cr ] ]
-]
-
-{ #category : 'results' }
-AITestGenerationBenchmark >> reportOf: aCompiledMethod [
-
-	| separation index conversation |
-	separation := '===================================================================================================='.
-	^ String streamContents: [ :strm |
-		  strm
-			  nextPutAll: 'Conversations around method ';
-			  nextPutAll: aCompiledMethod methodClass name;
-			  nextPutAll: ' >> #';
-			  nextPutAll: aCompiledMethod selector;
-			  cr;
-			  nextPutAll:
-				  'To reduce the length of the resport, system prompt and first user prompt are only shown in the first conversation.'.
-		  index := 1.
-		  results
-			  select: [ :r | r testedMethod = aCompiledMethod ]
-			  thenDo: [ :r |
-				  strm
-					  cr;
-					  cr;
-					  nextPutAll: separation;
-					  cr;
-					  nextPutAll: 'Conversation #';
-					  nextPutAll: index asString;
-					  cr;
-					  nextPutAll: separation.
-				  conversation := r conversation.
-				  index > 1 ifTrue: [
-					  conversation := conversation copyFrom: 3 to: conversation size ].
-				  conversation do: [ :m |
-					  strm cr.
-					  m printOn: strm ].
-				  strm
-					  cr;
-					  nextPutAll: 'Result of conversation #';
-					  nextPutAll: index asString;
-					  nextPutAll: ': ';
-					  nextPutAll: r status;
-					  cr;
-					  nextPutAll: separation.
-				  index := index + 1 ] ]
+					  nextPutAll: c asString;
+					  nextPutAll: ' (';
+					  nextPutAll: p asString;
+					  nextPutAll: '%)' ].
+			  strm cr ].
+		  strm cr ]
 ]
 
 { #category : 'running' }
@@ -238,33 +252,34 @@ AITestGenerationBenchmark >> showPlots [
 ]
 
 { #category : 'results' }
-AITestGenerationBenchmark >> statusPercentages [
-	"Returns the percentages of invalid, passed, failed and error results."
-
-	| efficiency k |
-	efficiency := Dictionary new.
-	AITestGenerationBenchmarkResult availableStatuses do: [ :s |
-		k := results count: [ :r | r status = s ].
-		efficiency at: s put: k asFloat / results size ].
-	^ efficiency
-]
-
-{ #category : 'results' }
-AITestGenerationBenchmark >> statusPercentagesByMethod [
-	"Returns the percentages of invalid, passed, failed and error result
+AITestGenerationBenchmark >> statusCountByMethod [
+	"Returns the number of invalid, passed, failed and error result
 	grouped by target method"
 
-	| statuses grouped percentages set k |
+	| statuses grouped counts set k |
 	statuses := AITestGenerationBenchmarkResult availableStatuses.
 	grouped := Dictionary new.
 	targetMethods do: [ :m |
-		percentages := Dictionary new.
+		counts := Dictionary new.
 		set := results select: [ :r | r testedMethod = m ].
 		statuses do: [ :s |
 			k := set count: [ :r | r status = s ].
-			percentages at: s put: k asFloat / set size ].
-		grouped at: m put: percentages ].
+			counts at: s put: k ].
+		counts at: #total put: set size.
+		grouped at: m put: counts ].
 	^ grouped
+]
+
+{ #category : 'results' }
+AITestGenerationBenchmark >> statusCounts [
+	"Returns the number of invalid, passed, failed and error results."
+
+	| counts k |
+	counts := Dictionary new.
+	AITestGenerationBenchmarkResult availableStatuses do: [ :s |
+		k := results count: [ :r | r status = s ].
+		counts at: s put: k ].
+	^ counts
 ]
 
 { #category : 'results' }
@@ -273,10 +288,13 @@ AITestGenerationBenchmark >> statusPercentagesByMethodPlot [
 	distribute among invalid, passed, failed and error categories.
 	Ugly code to ease migration to other dialects."
 
-	| percentages data cluster color plot |
-	percentages := self statusPercentagesByMethod.
+	| counts data cluster color plot c k |
+	counts := self statusCountByMethod.
 	AITestGenerationBenchmarkResult availableStatuses do: [ :s |
-		data := targetMethods collect: [ :m | (percentages at: m) at: s ].
+		data := targetMethods collect: [ :m |
+			        c := (counts at: m) at: s.
+			        k := (counts at: m) at: #total.
+			        c * 100.0 / k ].
 		cluster := (Smalltalk at: #RSBarPlotNew) new data: data.
 		color := self colorForStatus: s.
 		cluster color: color.
@@ -296,10 +314,12 @@ AITestGenerationBenchmark >> statusPercentagesPlot [
 	passed, failed and error categories.
 	Ugly code to ease migration to other dialects."
 
-	| percentages cluster color plot |
-	percentages := self statusPercentages.
-	percentages keysAndValuesDo: [ :s :p |
-		cluster := (Smalltalk at: #RSBarPlotNew) new data: { p }.
+	| counts n cluster color plot |
+	counts := self statusCounts.
+	n := results size.
+	counts keysAndValuesDo: [ :s :c |
+		cluster := (Smalltalk at: #RSBarPlotNew) new data:
+			           { (c / n * 100.0) }.
 		color := self colorForStatus: s.
 		cluster color: color.
 		plot := plot ifNil: [ cluster ] ifNotNil: [ plot + cluster ] ].
@@ -308,7 +328,8 @@ AITestGenerationBenchmark >> statusPercentagesPlot [
 			'Test generation efficiency (using ' , assistant interfaceName
 			, ')';
 		xlabel:
-			' black = invalid, green = passed, orange = failed, red = error '.
+			' black = invalid, green = passed, orange = failed, red = error ';
+		ylabel: '%'.
 	^ plot
 ]
 
@@ -322,20 +343,22 @@ AITestGenerationBenchmark >> targetMethods: aCollection [
 { #category : 'private' }
 AITestGenerationBenchmark >> tryTest: anAISuggestedMethod [
 
-	| result code description selector suite testResult exception |
-	self log: 'Trying generated test...'.
+	| result code description suite testResult exception |
 	result := AITestGenerationBenchmarkResult new.
-	result conversation: assistant messages copy.
+	result
+		conversation: assistant messages copy;
+		code: anAISuggestedMethod.
 	anAISuggestedMethod ifNil: [ ^ result beInvalid ].
+	self log:
+		'Trying generated test #' , anAISuggestedMethod selector , '...'.
 	code := anAISuggestedMethod sourceCode.
-	result testCode: code.
-	[ self tryToCompile: code in: AIGeneratedTest ]
+	[ anAISuggestedMethod install ]
 		on: Error
 		do: [ :e |
 			description := self describeCompilationError: e in: code.
 			^ result beInvalid: description ].
-	selector := AIGeneratedTest compile: code.
-	suite := AIGeneratedTest buildSuiteFromMethods: { selector }.
+	suite := anAISuggestedMethod realClass buildSuiteFromMethods:
+		         { anAISuggestedMethod selector }.
 	testResult := suite run.
 	testResult hasPassed ifTrue: [ ^ result bePassed ].
 	[ suite tests first runCase ]
