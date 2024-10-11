@@ -39,7 +39,7 @@ assistant useTool: AIFunction searchImplementors.
 assistant clearHistory; sendPrompt: 'What are the implementors of clearHistory?'.```
 
 By default, an AICodeAssistant uses OpenAI interface, but it can be told to use a different one (provided it is supported):
-```smalltalk
+
 mistral := MistralInterface new.
 mistral key: '<your Mistral API key>'.
 assistant := AICodeAssistant new.
