@@ -9,7 +9,8 @@ Class {
 		'model',
 		'key',
 		'maxTokens',
-		'temperature'
+		'temperature',
+		'tools'
 	],
 	#category : 'AICodeAssistant-Interfaces',
 	#package : 'AICodeAssistant',
@@ -22,12 +23,18 @@ AIInterface class >> url [
 ]
 
 { #category : 'accessing' }
+AIInterface >> addTool: anAIInterfaceTool [
+
+	tools add: anAIInterfaceTool
+]
+
+{ #category : 'accessing' }
 AIInterface >> defaultModel [
 
 	self subclassResponsibility
 ]
 
-{ #category : 'requests' }
+{ #category : 'messages' }
 AIInterface >> get: uri [
 
 	| data |
@@ -45,7 +52,8 @@ AIInterface >> initialize [
 	self initializeClient.
 	maxTokens := 3500.
 	temperature := 0.
-	model := self defaultModel
+	model := self defaultModel.
+	tools := OrderedCollection new
 ]
 
 { #category : 'initialization' }
@@ -74,13 +82,13 @@ AIInterface >> model: aString [
 	model := aString
 ]
 
-{ #category : 'requests' }
+{ #category : 'messages' }
 AIInterface >> modelWithId: id [
 
 	^ self get: '/models/' , id 
 ]
 
-{ #category : 'requests' }
+{ #category : 'messages' }
 AIInterface >> models [
 
 	^ self get: '/models'
@@ -99,7 +107,14 @@ AIInterface >> newJsonObject [
 	^ (Smalltalk at: #NeoJSONObject) new
 ]
 
-{ #category : 'requests' }
+{ #category : 'private' }
+AIInterface >> parseJson: aString [
+	"Ugly code to ease migration to other dialects."
+
+	^ (Smalltalk at: #NeoJSONReader) fromString: aString
+]
+
+{ #category : 'messages' }
 AIInterface >> post: uri with: json [
 
 	| data |
@@ -110,26 +125,52 @@ AIInterface >> post: uri with: json [
 	^ data
 ]
 
-{ #category : 'requests' }
+{ #category : 'accessing' }
+AIInterface >> removeTools [
+
+	tools removeAll
+]
+
+{ #category : 'messages' }
 AIInterface >> sendMessages: aCollection [
 
-	| body answer |
+	| body answer message name tool arguments response call |
 	body := self newJsonObject.
 	body
 		at: 'model' put: model;
-		at: 'messages' put: aCollection;
+		at: 'messages' put: (aCollection collect: #asJsonObject);
 		at: 'temperature' put: temperature;
 		at: 'max_tokens' put: maxTokens.
+	tools notEmpty ifTrue: [
+		body at: 'tools' put: (tools collect: #asJsonObject) ].
 	answer := self post: 'chat/completions' with: body.
-	^ ((answer at: 'choices') first at: 'message') at: 'content'
+	message := (answer at: 'choices') first at: 'message'.
+	response := AICodeAssistantMessage assistantResponse:
+		            (message at: 'content').
+	((answer at: 'choices') first at: 'finish_reason') = 'tool_calls'
+		ifTrue: [
+			name := ((message at: 'tool_calls') first at: 'function') at:
+				        'name'.
+			tool := tools
+				        detect: [ :t | t name = name ]
+				        ifNone: [ self error: 'tool not found' ].
+			arguments := self parseJson:
+				             (((message at: 'tool_calls') first at: 'function')
+					              at: 'arguments').
+			call := AIToolCall new
+				        id: ((message at: 'tool_calls') first at: 'id');
+				        tool: tool;
+				        arguments: arguments.
+			response toolCall: call ].
+	^ response
 ]
 
-{ #category : 'requests' }
+{ #category : 'messages' }
 AIInterface >> sendPrompt: text [
 	^self sendPrompt: text as: 'user'
 ]
 
-{ #category : 'requests' }
+{ #category : 'messages' }
 AIInterface >> sendPrompt: text as: role [
 
 	| message |

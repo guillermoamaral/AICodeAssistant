@@ -7,7 +7,8 @@ Class {
 	#instVars : [
 		'role',
 		'content',
-		'tags'
+		'tags',
+		'toolCall'
 	],
 	#category : 'AICodeAssistant-Base',
 	#package : 'AICodeAssistant',
@@ -31,6 +32,14 @@ AICodeAssistantMessage class >> systemPrompt: aString [
 ]
 
 { #category : 'instance creation' }
+AICodeAssistantMessage class >> toolResult: aString [
+
+	^ self new
+		  content: aString;
+		  role: 'tool'
+]
+
+{ #category : 'instance creation' }
 AICodeAssistantMessage class >> userPrompt: aString [
 
 	^ self new
@@ -41,15 +50,23 @@ AICodeAssistantMessage class >> userPrompt: aString [
 { #category : 'converting' }
 AICodeAssistantMessage >> asJsonObject [
 
-	^ self newJsonObject
-		  at: 'role' put: role;
-		  at: 'content' put: content;
-		  yourself
+	| json |
+	json := self newJsonObject.
+	json
+		at: 'role' put: role;
+		at: 'content' put: self content.
+	toolCall ifNotNil: [
+		role = 'tool'
+			ifTrue: [ json at: 'tool_call_id' put: toolCall id ]
+			ifFalse: [ json at: 'tool_calls' put: { toolCall asJsonObject } ] ].
+	^ json
 ]
 
 { #category : 'accessing' }
 AICodeAssistantMessage >> content [
 
+	(content isNil and: [ toolCall notNil ]) ifTrue: [
+		^ 'Tool call: ' , toolCall tool name ].
 	^ content
 ]
 
@@ -59,12 +76,24 @@ AICodeAssistantMessage >> content: aString [
 	content := aString
 ]
 
+{ #category : 'testing' }
+AICodeAssistantMessage >> hasToolCall [
+
+	^ toolCall notNil	
+]
+
 { #category : 'initialization' }
 AICodeAssistantMessage >> initialize [
 
 	super initialize.
 	role := 'user'.
 	tags := OrderedCollection new
+]
+
+{ #category : 'services' }
+AICodeAssistantMessage >> invokeTool [
+
+	^ toolCall invoke
 ]
 
 { #category : 'private' }
@@ -119,11 +148,12 @@ AICodeAssistantMessage >> partsTaggedWith: tag in: aString [
 
 { #category : 'printing' }
 AICodeAssistantMessage >> printOn: aStream [
+
 	aStream
 		nextPutAll: role;
 		nextPut: $:;
 		space;
-		nextPutAll: content
+		nextPutAll: self content
 ]
 
 { #category : 'accessing' }
@@ -159,4 +189,16 @@ AICodeAssistantMessage >> tags [
 AICodeAssistantMessage >> tags: aCollection [
 
 	tags := aCollection
+]
+
+{ #category : 'accessing' }
+AICodeAssistantMessage >> toolCall [
+
+	^ toolCall
+]
+
+{ #category : 'accessing' }
+AICodeAssistantMessage >> toolCall: anAIToolCall [
+
+	toolCall := anAIToolCall
 ]

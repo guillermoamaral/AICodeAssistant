@@ -97,12 +97,19 @@ AICodeAssistant >> addMethodsContext: aClass [
 	promptContext := promptContext , context
 ]
 
-{ #category : 'accessing' }
-AICodeAssistant >> beCodeFromTestsGenerator [
-	self systemPrompt: self systemPromptForCodeFromTestGeneration 
+{ #category : 'services' }
+AICodeAssistant >> beCodeAnalyzer [
+
+	self systemPrompt: self systemPromptForCodeAnalysis
 ]
 
-{ #category : 'accessing' }
+{ #category : 'services' }
+AICodeAssistant >> beCodeFromTestsGenerator [
+
+	self systemPrompt: self systemPromptForCodeFromTestGeneration
+]
+
+{ #category : 'services' }
 AICodeAssistant >> beTestsGenerator [
 
 	self systemPrompt: self systemPromptForTestGeneration
@@ -121,13 +128,13 @@ AICodeAssistant >> clearPromptContext [
 { #category : 'private' }
 AICodeAssistant >> codeFormatSpecification [
 
-	^ 'You answer should be in correct Smalltalk in the following format:
+	^ 'You answer should be in correct Smalltalk, without any ``` marks nor the word Smalltalk, in the following format:
 <issue>if you think there''''s a problem, describe it here</issue>
 <thinking>your rational and explanation here, be brief</thinking>
 <code>
 	<class>
-		<superclass>Smalltalk superclass name here</superclass>
-		<name>Smalltalk class name here</name>
+		<superclass>Smalltalk superclass name here, in case it is Object, do use AIGeneratedObject instead</superclass>
+		<name>Smalltalk class name here, use AI as prefix</name>
 		<instanceVariables>Instance variables here, space-separated</instanceVariables>
 		<classVariables>Class variables here, space-separated</instanceVariables>
 		<method>Smalltalk method code here; avoid including the class and >> before the selector</method>
@@ -154,7 +161,7 @@ AICodeAssistant >> defaultInterface [
 	^OpenAIInterface new model: 'chatgpt-4o-latest'
 ]
 
-{ #category : 'accessing' }
+{ #category : 'private' }
 AICodeAssistant >> defaultSystemPrompt [
 
 	^ 'You are an expert Smalltalk programmer.
@@ -287,7 +294,8 @@ AICodeAssistant >> promptContext: aString [
 AICodeAssistant >> requestCodeWith: aString [
 
 	| answer classes |
-	answer := self sendPrompt: aString , self codeFormatSpecification.
+	answer := self sendPrompt:
+		          aString , ' ' , self codeFormatSpecification.
 	classes := self extractClassesFrom: answer.
 	^ AICodeGenerationResult new
 		  classes: classes;
@@ -299,7 +307,8 @@ AICodeAssistant >> requestCodeWith: aString [
 AICodeAssistant >> requestTestsWith: aString [
 
 	| answer tests |
-	answer := self sendPrompt: aString , self testFormatSpecification.
+	answer := self sendPrompt:
+		          aString , ' ' , self testFormatSpecification.
 	tests := self extractTestsFrom: answer.
 	^ AICodeGenerationResult new
 		  methods: tests;
@@ -308,13 +317,17 @@ AICodeAssistant >> requestTestsWith: aString [
 ]
 
 { #category : 'private' }
-AICodeAssistant >> sendMessage: aCodeAssistantMessage [
+AICodeAssistant >> sendMessage: anAICodeAssistantMessage [
 
-	| answer response |
-	messages add: aCodeAssistantMessage.
-	answer := interface sendMessages: (messages collect: #asJsonObject).
-	response := AICodeAssistantMessage assistantResponse: answer.
+	| response result |
+	messages add: anAICodeAssistantMessage.
+	response := interface sendMessages: messages.
 	messages add: response.
+	response hasToolCall ifTrue: [
+		result := AICodeAssistantMessage toolResult: response invokeTool.
+		result toolCall: response toolCall.
+		messages add: result.
+		response := interface sendMessages: messages ].
 	^ response
 ]
 
@@ -345,6 +358,14 @@ AICodeAssistant >> systemPrompt: aString [
 ]
 
 { #category : 'private' }
+AICodeAssistant >> systemPromptForCodeAnalysis [
+
+	^ 'You are helping a user analyze Smalltalk code.
+Your task is to explain in detail prided code.
+If you need dig in sent messages, you can invoke provided tools.'
+]
+
+{ #category : 'private' }
 AICodeAssistant >> systemPromptForCodeFromTestGeneration [
 
 	^ 'You are helping a user create Smalltalk code based on a given set of test cases the class should honor.
@@ -366,7 +387,7 @@ AICodeAssistant >> testFormatSpecification [
 Your answer should be in correct Smalltalk in the following format:
 <bug>if you think there is a problem, describe it here</bug>
 <thinking>your rationale and explanation here, be brief</thinking>
-<test>pure Smalltalk code for the test case, without any ```marks</test>.
+<test>pure Smalltalk code for the test case, without any ``` marks</test>.
 If there is more than one test, enclose each of them between <test> and </test>.'
 ]
 
@@ -409,6 +430,12 @@ AICodeAssistant >> useTestsContext: aTestSuite [
 						                 (test class >> test selector) sourceCode;
 					                 nextPutAll: '</test>' ]
 			                 separatedBy: [ strm cr ] ]
+]
+
+{ #category : 'services' }
+AICodeAssistant >> useTool: anAIInterfaceTool [
+
+	interface addTool: anAIInterfaceTool
 ]
 
 { #category : 'services' }
