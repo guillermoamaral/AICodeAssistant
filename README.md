@@ -21,7 +21,7 @@ assistant interface key: '<your AI API key>'.
 "Explain a method"
 assistant explainMethod: Date >> #addDays:.
 
-"Generate a tests from code, one or more"
+"Generate a tests"
 assistant beTestsGenerator.
 assistant writeTestForMethod: Date >> #addDays:.
 assistant writeTestsForMethod: Date >> #addDays:.
@@ -29,7 +29,14 @@ assistant writeTestsForMethod: Date >> #addDays:.
 "Generate code based on a given test suite"
 assistant beCodeFromTestsGenerator.
 assistant writeCodeFromTests: RectangleTest buildSuiteFromLocalSelectors.
-```
+
+"Deduce type of an expression"
+assistant deduceTypeOfExpression: '1 = 2 ifTrue: [2] ifFalse: [''a'']'.
+
+"Use tools"
+interface model: 'gpt-4o'; removeTools.
+assistant useTool: AIFunction searchImplementors.
+assistant clearHistory; sendPrompt: 'What are the implementors of clearHistory?'.```
 
 By default, an AICodeAssistant uses OpenAI interface, but it can be told to use a different one (provided it is supported):
 ```smalltalk
