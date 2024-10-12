@@ -41,12 +41,16 @@ AITestGenerationBenchmark >> describeCompilationError: anError in: aString [
 ]
 
 { #category : 'private' }
-AITestGenerationBenchmark >> describeTestError: anError in: aString [
+AITestGenerationBenchmark >> describeErrorInTest: aTestCase [
 
-	| mention description |
+	| exception method mention description |
+	[ aTestCase runCase ]
+		on: Exception
+		do: [ :e | exception := e ].
+	method := aTestCase class >> aTestCase selector.
 	^ String streamContents: [ :strm |
-		  mention := self mentionTestCode: aString.
-		  description := self describeError: anError.
+		  mention := self mentionTestCode: method sourceCode.
+		  description := self describeError: exception.
 		  strm
 			  nextPutAll: mention;
 			  nextPutAll: ' resulted in ';
@@ -57,17 +61,30 @@ AITestGenerationBenchmark >> describeTestError: anError in: aString [
 ]
 
 { #category : 'private' }
-AITestGenerationBenchmark >> describeTestFailure: aTestFailure in: aString [
-	"We need to provide better description based on the concrete assertion that triggered the failure..."
+AITestGenerationBenchmark >> describeFailureInTest: aTestCase [
 
-	| mention |
+	| method frame description interval mention |
+	method := aTestCase class >> aTestCase selector.
+	[ aTestCase runCase ]
+		on: Exception
+		do: [ :e |
+			frame := e signalContext stack
+				         detect: [ :f | f method == method ]
+				         ifNone: [  ].
+			description := frame
+				               ifNotNil: [
+					               interval := frame pcRangeContextIsActive: false.
+					               method sourceCode
+						               copyFrom: interval first
+						               to: interval last ]
+				               ifNil: [ e description ] ].
 	^ String streamContents: [ :strm |
-		  mention := self mentionTestCode: aString.
+		  mention := self mentionTestCode: method sourceCode.
 		  strm
 			  nextPutAll: mention;
 			  nextPutAll: ' resulted in the following failure: ';
 			  cr;
-			  nextPutAll: aTestFailure description;
+			  nextPutAll: description;
 			  nextPutAll: '. Provide a version that does not fail.' ]
 ]
 
@@ -343,7 +360,7 @@ AITestGenerationBenchmark >> targetMethods: aCollection [
 { #category : 'private' }
 AITestGenerationBenchmark >> tryTest: anAISuggestedMethod [
 
-	| result code description suite testResult exception |
+	| result code description suite testResult |
 	result := AITestGenerationBenchmarkResult new.
 	result
 		conversation: assistant messages copy;
@@ -361,13 +378,10 @@ AITestGenerationBenchmark >> tryTest: anAISuggestedMethod [
 		         { anAISuggestedMethod selector }.
 	testResult := suite run.
 	testResult hasPassed ifTrue: [ ^ result bePassed ].
-	[ suite tests first runCase ]
-		on: Exception
-		do: [ :e | exception := e ].
 	testResult hasErrors ifTrue: [
-		description := self describeTestError: exception in: code.
+		description := self describeErrorInTest: suite tests first.
 		^ result beError: description ].
-	description := self describeTestFailure: exception in: code.
+	description := self describeFailureInTest: suite tests first.
 	^ result beFailed: description
 ]
 

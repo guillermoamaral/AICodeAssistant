@@ -76,6 +76,12 @@ AISuggestedClass >> install [
 			tag: 'Generated code' ]
 ]
 
+{ #category : 'services' }
+AISuggestedClass >> installMethods [
+
+	methods do: #install
+]
+
 { #category : 'accessing' }
 AISuggestedClass >> instanceVariableNames [
 
