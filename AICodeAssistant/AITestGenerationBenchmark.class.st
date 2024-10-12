@@ -43,14 +43,14 @@ AITestGenerationBenchmark >> describeCompilationError: anError in: aString [
 { #category : 'private' }
 AITestGenerationBenchmark >> describeErrorInTest: aTestCase [
 
-	| exception method mention description |
+	| error mention description |
 	[ aTestCase runCase ]
 		on: Exception
-		do: [ :e | exception := e ].
-	method := aTestCase class >> aTestCase selector.
+		do: [ :e | error := e ].
 	^ String streamContents: [ :strm |
-		  mention := self mentionTestCode: method sourceCode.
-		  description := self describeError: exception.
+		  mention := self mentionTestCode:
+			             (aTestCase class >> aTestCase selector) sourceCode.
+		  description := assistant describeError: error providingHint: true.
 		  strm
 			  nextPutAll: mention;
 			  nextPutAll: ' resulted in ';
@@ -63,28 +63,15 @@ AITestGenerationBenchmark >> describeErrorInTest: aTestCase [
 { #category : 'private' }
 AITestGenerationBenchmark >> describeFailureInTest: aTestCase [
 
-	| method frame description interval mention |
-	method := aTestCase class >> aTestCase selector.
-	[ aTestCase runCase ]
-		on: Exception
-		do: [ :e |
-			frame := e signalContext stack
-				         detect: [ :f | f method == method ]
-				         ifNone: [  ].
-			description := frame
-				               ifNotNil: [
-					               interval := frame pcRangeContextIsActive: false.
-					               method sourceCode
-						               copyFrom: interval first
-						               to: interval last ]
-				               ifNil: [ e description ] ].
+	| mention |
 	^ String streamContents: [ :strm |
-		  mention := self mentionTestCode: method sourceCode.
+		  mention := self mentionTestCode:
+			             (aTestCase class >> aTestCase selector) sourceCode.
 		  strm
 			  nextPutAll: mention;
 			  nextPutAll: ' resulted in the following failure: ';
 			  cr;
-			  nextPutAll: description;
+			  nextPutAll: (assistant describeTestFailure: aTestCase);
 			  nextPutAll: '. Provide a version that does not fail.' ]
 ]
 

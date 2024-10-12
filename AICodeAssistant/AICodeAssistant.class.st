@@ -133,8 +133,8 @@ AICodeAssistant >> codeFormatSpecification [
 <thinking>your rational and explanation here, be brief</thinking>
 <code>
 	<class>
-		<superclass>Smalltalk superclass name here, in case it is Object, do use AIGeneratedObject instead</superclass>
-		<name>Smalltalk class name here, use AI as prefix</name>
+		<superclass>Smalltalk superclass name here</superclass>
+		<name>Smalltalk class name here</name>
 		<instanceVariables>Instance variables here, space-separated</instanceVariables>
 		<classVariables>Class variables here, space-separated</instanceVariables>
 		<method>Smalltalk method code here; avoid including the class and >> before the selector</method>
@@ -144,6 +144,16 @@ AICodeAssistant >> codeFormatSpecification [
 	</class>
 </code>
 repeating <class> for each class you define, and <method> for every method you define in every class'''
+]
+
+{ #category : 'services' }
+AICodeAssistant >> commentMethod: aCompiledMethod [
+
+	| answer |
+	self useMethodContext: aCompiledMethod.
+	answer := self sendPrompt:
+		          'Give me a clear and concise comment for the given method, in less than 200 characters.'.
+	^ answer content
 ]
 
 { #category : 'services' }
@@ -167,6 +177,54 @@ AICodeAssistant >> defaultSystemPrompt [
 	^ 'You are an expert Smalltalk programmer.
 When I ask for help to analyze, explain or write Smalltalk code, you will reply accordingly.
 In your response you will avoid using the words ''Smalltalk'' and ''snippet''.'
+]
+
+{ #category : 'services' }
+AICodeAssistant >> describeError: anError providingHint: aBoolean [
+	"This is used to describe an error for the AI (not a service derived from it)"
+	
+	^ String streamContents: [ :strm |
+		  anError == MessageNotUnderstood
+			  ifTrue: [
+				  strm
+					  nextPutAll: 'an instance of ';
+					  nextPutAll: anError receiver class name;
+					  nextPutAll: ' did not understand ';
+					  nextPutAll: anError message selector.
+				  aBoolean ifTrue: [
+					  strm nextPutAll:
+						  '. Hint: these are the messages the object understands and could be used instead: '.
+					  anError receiver class allSelectors
+						  do: [ :s | strm nextPutAll: s ]
+						  separatedBy: [ strm nextPut: $, ] ] ]
+			  ifFalse: [
+				  strm
+					  nextPutAll: 'an error saying: "';
+					  nextPutAll: anError description;
+					  nextPut: $" ] ]
+]
+
+{ #category : 'services' }
+AICodeAssistant >> describeTestFailure: aTestCase [
+	"This is used to describe a test failure for the AI (not a service derived from it).
+	Note: it is required to run the case to dig into the exception stack."
+
+	| method frame interval |
+	method := aTestCase class >> aTestCase selector.
+	[ aTestCase runCase ]
+		on: Exception
+		do: [ :e |
+			frame := e signalContext stack
+				         detect: [ :f | f method == method ]
+				         ifNone: [  ].
+			^ frame
+				  ifNotNil: [
+					  interval := frame pcRangeContextIsActive: false.
+					  'the test fails when it evaluates: ' , method sourceCode
+						  copyFrom: interval first
+						  to: interval last ]
+				  ifNil: [ e description ] ].
+	^ 'test does not fail!'
 ]
 
 { #category : 'services' }

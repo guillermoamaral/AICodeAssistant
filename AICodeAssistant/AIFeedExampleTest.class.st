@@ -2,7 +2,7 @@
 This class is just a place holder for a set of test cases for AIAssistant to generate code
 "
 Class {
-	#name : 'AIFeedTest',
+	#name : 'AIFeedExampleTest',
 	#superclass : 'TestCase',
 	#category : 'AICodeAssistant-Tests',
 	#package : 'AICodeAssistant',
@@ -10,7 +10,7 @@ Class {
 }
 
 { #category : 'tests' }
-AIFeedTest >> testSomething [
+AIFeedExampleTest >> testSomething [
 
 	| object |
 	object := FibonacciObject new.
