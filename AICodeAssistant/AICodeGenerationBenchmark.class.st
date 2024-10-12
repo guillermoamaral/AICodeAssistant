@@ -86,26 +86,28 @@ AICodeGenerationBenchmark >> targetSuites: aCollection [
 { #category : 'private' }
 AICodeGenerationBenchmark >> tryCode: anAICodeGenerationResult with: aTestSuite [
 
-	| result suiteResult description |
+	| result invalid suiteResult description |
 	self log: 'Trying generated code...'.
 	result := AICodeGenerationBenchmarkResult new.
 	result
 		conversation: assistant messages copy;
-		code: anAICodeGenerationResult; testSuite: aTestSuite.
-	anAICodeGenerationResult classes
-		do: [ :class |
-			class canBeInstalled ifFalse: [
-					^ result beInvalid:
-							  'Class  ' , class name , ' cannot be installed.' ].
-			class install ];
-		do: [ :class |
-			class methods do: [ :method |
-					[ method install ]
-						on: Error
-						do: [ :e |
-							description := self describeCompilationError: e in: method.
-							^ result beInvalid: description ].
-					method install ] ].
+		code: anAICodeGenerationResult;
+		testSuite: aTestSuite.
+	invalid := anAICodeGenerationResult classes
+		           detect: [ :class | class canBeInstalled ]
+		           ifNone: [  ].
+	invalid ifNotNil: [
+		^ result beInvalid:
+			  'Class  ' , invalid name , ' cannot be installed.' ].
+	anAICodeGenerationResult classes do: #install.
+	anAICodeGenerationResult classes do: [ :class |
+		class methods do: [ :method |
+			[ method install ]
+				on: Error
+				do: [ :e |
+					description := self describeCompilationError: e in: method.
+					^ result beInvalid: description ].
+			method install ] ].
 	suiteResult := aTestSuite run.
 	suiteResult hasPassed ifTrue: [ ^ result bePassed ].
 	suiteResult hasFailures ifTrue: [

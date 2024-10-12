@@ -28,51 +28,16 @@ AITestGenerationBenchmark >> colorForStatus: aSymbol [
 ]
 
 { #category : 'private' }
-AITestGenerationBenchmark >> describeCompilationError: anError in: aString [
+AITestGenerationBenchmark >> describeCompilationError: anError in: anAISuggestedMethod [
 
-	| mention |
 	^ String streamContents: [ :strm |
-		  mention := self mentionTestCode: aString.
 		  strm
-			  nextPutAll: mention;
+			  nextPutAll: 'Suggested test <test>';
+			  nextPutAll: anAISuggestedMethod sourceCode;
+			  nextPutAll: '</test>';
 			  nextPutAll: ' could not be compiled due to this error: "';
 			  nextPutAll: anError description;
 			  nextPut: $" ]
-]
-
-{ #category : 'private' }
-AITestGenerationBenchmark >> describeErrorInTest: aTestCase [
-
-	| error mention description |
-	[ aTestCase runCase ]
-		on: Exception
-		do: [ :e | error := e ].
-	^ String streamContents: [ :strm |
-		  mention := self mentionTestCode:
-			             (aTestCase class >> aTestCase selector) sourceCode.
-		  description := assistant describeError: error providingHint: true.
-		  strm
-			  nextPutAll: mention;
-			  nextPutAll: ' resulted in ';
-			  nextPutAll: description;
-			  cr;
-			  nextPutAll:
-				  'Provide a version that does not fall into this error.' ]
-]
-
-{ #category : 'private' }
-AITestGenerationBenchmark >> describeFailureInTest: aTestCase [
-
-	| mention |
-	^ String streamContents: [ :strm |
-		  mention := self mentionTestCode:
-			             (aTestCase class >> aTestCase selector) sourceCode.
-		  strm
-			  nextPutAll: mention;
-			  nextPutAll: ' resulted in the following failure: ';
-			  cr;
-			  nextPutAll: (assistant describeTestFailure: aTestCase);
-			  nextPutAll: '. Provide a version that does not fail.' ]
 ]
 
 { #category : 'results' }
@@ -134,7 +99,7 @@ AITestGenerationBenchmark >> generateTestsFor: aCompiledMethod [
 			result := self tryToSolve: result.
 			attempt := attempt + 1 ].
 		result testedMethod: aCompiledMethod.
-		self log: 'Resulted in #' , result status.
+		self log: result status.
 		self addResult: result ]
 ]
 
@@ -143,16 +108,6 @@ AITestGenerationBenchmark >> initialize [
 
 	super initialize.
 	assistant beTestsGenerator
-]
-
-{ #category : 'private' }
-AITestGenerationBenchmark >> mentionTestCode: aString [
-
-	^ String streamContents: [ :strm |
-		  strm
-			  nextPutAll: 'The suggested test <test>';
-			  nextPutAll: aString;
-			  nextPutAll: '</test>' ]
 ]
 
 { #category : 'results' }
@@ -347,7 +302,7 @@ AITestGenerationBenchmark >> targetMethods: aCollection [
 { #category : 'private' }
 AITestGenerationBenchmark >> tryTest: anAISuggestedMethod [
 
-	| result code description suite testResult |
+	| result description suite testResult test |
 	result := AITestGenerationBenchmarkResult new.
 	result
 		conversation: assistant messages copy;
@@ -355,29 +310,34 @@ AITestGenerationBenchmark >> tryTest: anAISuggestedMethod [
 	anAISuggestedMethod ifNil: [ ^ result beInvalid ].
 	self log:
 		'Trying generated test #' , anAISuggestedMethod selector , '...'.
-	code := anAISuggestedMethod sourceCode.
 	[ anAISuggestedMethod install ]
 		on: Error
 		do: [ :e |
-			description := self describeCompilationError: e in: code.
+			description := self
+				               describeCompilationError: e
+				               in: anAISuggestedMethod.
 			^ result beInvalid: description ].
 	suite := anAISuggestedMethod realClass buildSuiteFromMethods:
 		         { anAISuggestedMethod selector }.
 	testResult := suite run.
 	testResult hasPassed ifTrue: [ ^ result bePassed ].
-	testResult hasErrors ifTrue: [
-		description := self describeErrorInTest: suite tests first.
-		^ result beError: description ].
-	description := self describeFailureInTest: suite tests first.
-	^ result beFailed: description
+	test := suite tests first.
+	description := testResult hasErrors
+		               ifTrue: [ assistant describeTestError: test ]
+		               ifFalse: [ assistant describeTestFailure: test ].
+	testResult hasErrors
+		ifTrue: [ result beError: description ]
+		ifFalse: [ result beFailed: description ].
+	^ result
 ]
 
 { #category : 'private' }
 AITestGenerationBenchmark >> tryToSolve: anAITestGenerationBenchmarkResult [
 
-	| tests |
+	| prompt tests |
 	assistant clearPromptContext.
-	tests := (assistant requestTestsWith:
-		          anAITestGenerationBenchmarkResult description) methods.
+	prompt := anAITestGenerationBenchmarkResult description
+	          , '. Provide another version that solves this.'.
+	tests := (assistant requestTestsWith: prompt) methods.
 	^ self tryTest: (tests notEmpty ifTrue: [ tests first ])
 ]

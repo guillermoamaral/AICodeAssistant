@@ -182,26 +182,34 @@ In your response you will avoid using the words ''Smalltalk'' and ''snippet''.'
 { #category : 'services' }
 AICodeAssistant >> describeError: anError providingHint: aBoolean [
 	"This is used to describe an error for the AI (not a service derived from it)"
-	
+
+	anError == MessageNotUnderstood ifFalse: [ ^ anError description ].
 	^ String streamContents: [ :strm |
-		  anError == MessageNotUnderstood
-			  ifTrue: [
-				  strm
-					  nextPutAll: 'an instance of ';
-					  nextPutAll: anError receiver class name;
-					  nextPutAll: ' did not understand ';
-					  nextPutAll: anError message selector.
-				  aBoolean ifTrue: [
-					  strm nextPutAll:
-						  '. Hint: these are the messages the object understands and could be used instead: '.
-					  anError receiver class allSelectors
-						  do: [ :s | strm nextPutAll: s ]
-						  separatedBy: [ strm nextPut: $, ] ] ]
-			  ifFalse: [
-				  strm
-					  nextPutAll: 'an error saying: "';
-					  nextPutAll: anError description;
-					  nextPut: $" ] ]
+		  strm
+			  nextPutAll: 'An instance of ';
+			  nextPutAll: anError receiver class name;
+			  nextPutAll: ' did not understand ';
+			  nextPutAll: anError message selector.
+		  aBoolean ifTrue: [
+			  strm nextPutAll:
+				  '. Hint: these are the messages the object understands and that could be used instead: '.
+			  anError receiver class allSelectors
+				  do: [ :s | strm nextPutAll: s ]
+				  separatedBy: [ strm nextPut: $, ] ] ]
+]
+
+{ #category : 'services' }
+AICodeAssistant >> describeTestError: aTestCase [
+	"This is used to describe a test error for the AI (not a service derived from it).
+	Note: it is required to run the case to have the exception description."
+
+	| description |
+	[ aTestCase runCase ]
+		on: Exception
+		do: [ :error |
+			description := self describeError: error providingHint: true.
+			^ 'Resulted in the following error: ' , description ].
+	^ 'Does not result in error!'
 ]
 
 { #category : 'services' }
@@ -209,22 +217,21 @@ AICodeAssistant >> describeTestFailure: aTestCase [
 	"This is used to describe a test failure for the AI (not a service derived from it).
 	Note: it is required to run the case to dig into the exception stack."
 
-	| method frame interval |
+	| method frame interval assertion |
 	method := aTestCase class >> aTestCase selector.
 	[ aTestCase runCase ]
 		on: Exception
-		do: [ :e |
-			frame := e signalContext stack
+		do: [ :exception |
+			frame := exception signalContext stack
 				         detect: [ :f | f method == method ]
 				         ifNone: [  ].
-			^ frame
-				  ifNotNil: [
-					  interval := frame pcRangeContextIsActive: false.
-					  'the test fails when it evaluates: ' , method sourceCode
-						  copyFrom: interval first
-						  to: interval last ]
-				  ifNil: [ e description ] ].
-	^ 'test does not fail!'
+			frame ifNil: [ ^ exception description ].
+			interval := frame pcRangeContextIsActive: false.
+			assertion := method sourceCode
+				             copyFrom: interval first
+				             to: interval last.
+			'Failed at: ' , assertion ].
+	^ 'Does not fail!'
 ]
 
 { #category : 'services' }
