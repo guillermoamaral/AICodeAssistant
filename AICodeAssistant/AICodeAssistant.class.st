@@ -392,7 +392,8 @@ AICodeAssistant >> sendMessage: anAICodeAssistantMessage [
 		result := AICodeAssistantMessage toolResult: response invokeTool.
 		result toolCall: response toolCall.
 		messages add: result.
-		response := interface sendMessages: messages ].
+		response := interface sendMessages: messages.
+		messages add: response ].
 	^ response
 ]
 

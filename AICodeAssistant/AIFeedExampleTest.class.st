@@ -13,7 +13,7 @@ Class {
 AIFeedExampleTest >> testSomething [
 
 	| object |
-	object := FibonacciObject new.
+	object := Object new.
 	self
 		assert: (object doSomethingWith: 1) = 1;
 		assert: (object doSomethingWith: 2) equals: 1;
