@@ -75,7 +75,7 @@ AICodeAssistant >> addMethodContext: aCompiledMethod [
 			           nextPutAll: aCompiledMethod classBinding name;
 			           nextPutAll: ' with selector #';
 			           nextPutAll: aCompiledMethod selector;
-			           nextPutAll: ' and with the follwing code:';
+			           nextPutAll: ' and with the follwing source code:';
 			           cr;
 			           nextPutAll: aCompiledMethod sourceCode ].
 	promptContext := promptContext , context
@@ -89,7 +89,14 @@ AICodeAssistant >> addMethodsContext: aClass [
 		           strm
 			           nextPutAll: 'Consider the class ';
 			           nextPutAll: aClass name;
-			           nextPutAll: ' which defines the following methods: ';
+			           nextPutAll:
+				           ' which defines the following class methods: ';
+			           cr.
+		           aClass class methodDictionary
+			           do: [ :m | strm nextPutAll: m sourceCode ]
+			           separatedBy: [ strm cr ].
+		           strm
+			           nextPutAll: 'and the following instance methods: ';
 			           cr.
 		           aClass methodDictionary
 			           do: [ :m | strm nextPutAll: m sourceCode ]
@@ -120,7 +127,7 @@ AICodeAssistant >> clearHistory [
 	self initializeMessages
 ]
 
-{ #category : 'accessing' }
+{ #category : 'context' }
 AICodeAssistant >> clearPromptContext [
 	promptContext := ''
 ]
@@ -307,13 +314,6 @@ AICodeAssistant >> initialize [
 ]
 
 { #category : 'initialization' }
-AICodeAssistant >> initializeInterface [
- 	interface := OpenAIInterface new.
-	interface model: 'chatgpt-4o-latest'.
-	
-]
-
-{ #category : 'initialization' }
 AICodeAssistant >> initializeMessages [
 
 	| message |
@@ -474,7 +474,7 @@ AICodeAssistant >> useMethodContext: aCompiledMethod [
 	promptContext := String streamContents: [ :strm |
 		                 strm
 			                 nextPutAll:
-				                 'Consider the follwing Smalltalk method in class ';
+				                 'Consider the method in class ';
 			                 nextPutAll: aCompiledMethod classBinding name;
 			                 cr;
 			                 nextPutAll: aCompiledMethod sourceCode ]
